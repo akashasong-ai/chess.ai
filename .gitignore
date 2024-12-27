@@ -15,3 +15,6 @@ frontend/.DS_Store
 *.log
 *.sqlite3
 .DS_Store
+
+# Environment Variables
+.env
