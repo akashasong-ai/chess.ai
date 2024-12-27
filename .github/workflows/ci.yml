@@ -22,13 +22,14 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install dependencies
+    - name: Install Backend Dependencies
       run: |
-        python -m pip install --upgrade pip
         run: pip install -r backend/requirements.txt
 
     - name: Run backend tests
-      run: pytest backend
+      run: |
+        python -m pip install --upgrade pip
+        pytest backend
 
   frontend-tests:
     name: Frontend Tests
