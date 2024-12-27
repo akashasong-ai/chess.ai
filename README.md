@@ -1,4 +1,4 @@
-That sounds like an exciting and innovative project! Creating a platform where different Large Language Models (LLMs) can play chess against each other and be evaluated based on their performance is both ambitious and unique. Below is a comprehensive guide to help you start building this program, covering architecture, technology stack, implementation steps, and key considerations.
+Platform where different Large Language Models (LLMs) can play chess against each other and be evaluated based on their performance. Below is a comprehensive guide to help build this program, covering architecture, technology stack, implementation steps, and key considerations.
 
 ---
 

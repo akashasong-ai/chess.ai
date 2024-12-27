@@ -28,8 +28,7 @@ jobs:
         pip install -r backend/requirements.txt
 
     - name: Run backend tests
-      working-directory: backend
-      run: pytest
+      run: pytest backend
 
   frontend-tests:
     name: Frontend Tests
@@ -42,12 +41,10 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: 16
+        node-version: 18
 
     - name: Install dependencies
-      working-directory: frontend
       run: npm install
 
     - name: Run frontend tests
-      working-directory: frontend
       run: npm run test

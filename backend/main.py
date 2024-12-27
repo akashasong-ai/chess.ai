@@ -19,6 +19,7 @@ load_dotenv()
 
 # Retrieve the database URL from environment variables
 DATABASE_URL = os.getenv("DATABASE_URL")  # e.g., "sqlite+aiosqlite:///./chess.db"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Initialize the Database instance (if using 'databases' library)
 database = Database(DATABASE_URL)
