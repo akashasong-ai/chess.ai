@@ -18,3 +18,4 @@ frontend/.DS_Store
 
 # Environment Variables
 .env
+tests/__pycache__/
