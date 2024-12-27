@@ -19,6 +19,10 @@ load_dotenv()
 
 # Retrieve the database URL from environment variables
 DATABASE_URL = os.getenv("DATABASE_URL")  # e.g., "sqlite+aiosqlite:///./chess.db"
+if not DATABASE_URL:
+    print("Warning: DATABASE_URL is not set. Defaulting to an in-memory SQLite database for testing.")
+    DATABASE_URL = "sqlite:///test.db"  # Use an in-memory SQLite database for tests.
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Initialize the Database instance (if using 'databases' library)
