@@ -57,13 +57,19 @@ LLM.to_dict = model_to_dict
 Game.to_dict = model_to_dict
 
 # Startup and shutdown events for the Database connection
-@app.on_event("startup")
-async def startup():
-    await database.connect()
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
 
-@app.on_event("shutdown")
-async def shutdown():
-    await database.disconnect()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup code here
+    yield
+    # Shutdown code here
+
+app = FastAPI(lifespan=lifespan)
+
+# Define routes below
+
 
 # Root endpoint
 @app.get("/")
