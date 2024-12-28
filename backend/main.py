@@ -13,9 +13,23 @@ from typing import List
 from dotenv import load_dotenv
 import os
 from databases import Database  # Import Database if using 'databases' library
+from gemini_adapter import GeminiAdapter
+from openai_adapter import OpenAIAdapter
+from llm_interface import LLMInterface
+from backend.models import Base, LLM, Game  # Import Base from backend.models
 
 # Load environment variables from .env file
 load_dotenv()
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_BASE_URL = os.getenv("GEMINI_BASE_URL")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# Load LLMs
+LLM_PROVIDERS = {
+    "gemini": GeminiAdapter(api_key="your_gemini_api_key", base_url="https://gemini.api"),
+    "openai": OpenAIAdapter(api_key="your_openai_api_key")
+}
 
 # Retrieve the database URL from environment variables
 DATABASE_URL = os.getenv("DATABASE_URL")  # e.g., "sqlite+aiosqlite:///./chess.db"
@@ -81,6 +95,15 @@ async def read_root():
     return {"message": "Welcome to the Chess LLM Backend"}
 
 # CRUD Endpoints for LLMs
+
+@app.post("/get-move/")
+async def get_move(provider: str, game_state: str):
+    llm: LLMInterface = LLM_PROVIDERS.get(provider)
+    if not llm:
+        raise HTTPException(status_code=400, detail="Invalid LLM provider")
+
+    move = await llm.generate_move(game_state)
+    return {"move": move}
 
 @app.post("/llms/", response_model=LLMRead)
 async def create_llm_endpoint(llm: LLMCreate, db: Session = Depends(get_db)):
