@@ -26,7 +26,7 @@ jobs:
       run: pip install -r backend/requirements.txt
 
     - name: Set PYTHONPATH
-      run: echo "PYTHONPATH=$(pwd):$(pwd)/backend" >> $GITHUB_ENV
+      run: echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV
 
     - name: Run backend tests
       run: |
