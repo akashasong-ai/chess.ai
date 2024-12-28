@@ -31,7 +31,7 @@ jobs:
     - name: Run backend tests
       run: |
         python -m pip install --upgrade pip
-        pytest backend
+        PYTHONPATH=backend pytest backend
 
   frontend-tests:
     name: Frontend Tests
