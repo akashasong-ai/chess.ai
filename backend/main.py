@@ -17,6 +17,7 @@ from gemini_adapter import GeminiAdapter
 from openai_adapter import OpenAIAdapter
 from llm_interface import LLMInterface
 from backend.models import Base, LLM, Game  # Import Base from backend.models
+from backend.gemini_adapter import GeminiAdapter
 
 # Load environment variables from .env file
 load_dotenv()
