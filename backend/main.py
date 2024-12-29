@@ -13,7 +13,7 @@ from typing import List
 from dotenv import load_dotenv
 import os
 from databases import Database  # Import Database if using 'databases' library
-from gemini_adapter import GeminiAdapter
+from .gemini_adapter import GeminiAdapter
 from openai_adapter import OpenAIAdapter
 from llm_interface import LLMInterface
 from backend.models import Base, LLM, Game  # Import Base from backend.models
@@ -25,6 +25,7 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_BASE_URL = os.getenv("GEMINI_BASE_URL")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
 
 # Load LLMs
 LLM_PROVIDERS = {
