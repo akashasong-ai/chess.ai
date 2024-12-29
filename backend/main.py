@@ -15,9 +15,9 @@ import os
 from databases import Database  # Import Database if using 'databases' library
 from backend.gemini_adapter import GeminiAdapter
 from openai_adapter import OpenAIAdapter
+from backend.claude_adapter import ClaudeAdapter
 from llm_interface import LLMInterface
 from backend.models import Base, LLM, Game  # Import Base from backend.models
-from backend.gemini_adapter import GeminiAdapter
 
 # Load environment variables from .env file
 load_dotenv()
@@ -29,8 +29,9 @@ CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
 
 # Load LLMs
 LLM_PROVIDERS = {
-    "gemini": GeminiAdapter(api_key="your_gemini_api_key", base_url="https://gemini.api"),
-    "openai": OpenAIAdapter(api_key="your_openai_api_key")
+    "gemini": GeminiAdapter(api_key=GEMINI_API_KEY, base_url=GEMINI_BASE_URL),
+    "openai": OpenAIAdapter(api_key=OPENAI_API_KEY),
+    "claude": ClaudeAdapter(api_key=CLAUDE_API_KEY),
 }
 
 # Retrieve the database URL from environment variables
