@@ -4,12 +4,9 @@ from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Tex
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import declarative_base
 import datetime
-from pydantic import BaseModel, ConfigDict
+
 
 Base = declarative_base()
-
-class MyModel(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
 
 class LLM(Base):
     __tablename__ = 'llms'

@@ -3,7 +3,7 @@
 from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from models import Base, LLM, Game  # Import Base from models.py
+from .models import Base, LLM, Game  # Import Base from models.py
 from schemas import LLMCreate, LLMRead, GameCreate, GameRead, Move
 import crud
 import chess
@@ -13,7 +13,7 @@ from typing import List
 from dotenv import load_dotenv
 import os
 from databases import Database  # Import Database if using 'databases' library
-from .gemini_adapter import GeminiAdapter
+from backend.gemini_adapter import GeminiAdapter
 from openai_adapter import OpenAIAdapter
 from llm_interface import LLMInterface
 from backend.models import Base, LLM, Game  # Import Base from backend.models
