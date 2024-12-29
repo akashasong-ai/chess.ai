@@ -1,6 +1,6 @@
 # schemas.py
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
 import chess
@@ -43,3 +43,6 @@ class Move(BaseModel):
 
     class Config:
         from_attributes = True  # Updated from orm_mode
+
+class MyModel(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
