@@ -28,6 +28,9 @@ GEMINI_BASE_URL = os.getenv("GEMINI_BASE_URL")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 # Load LLMs
 LLM_PROVIDERS = {
     "gemini": GeminiAdapter(api_key="your_gemini_api_key", base_url="https://gemini.api"),
