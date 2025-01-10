@@ -67,3 +67,16 @@ def add_llm():
         'api_type': llm.api_type,
         'elo_rating': llm.elo_rating
     }) 
+
+@main.route('/api/games/<int:game_id>', methods=['GET'])
+def get_game(game_id):
+    game = Game.query.get_or_404(game_id)
+    return jsonify({
+        'id': game.id,
+        'white_llm': LLM.query.get(game.white_llm_id).name,
+        'black_llm': LLM.query.get(game.black_llm_id).name,
+        'moves': game.moves.split() if game.moves else [],
+        'result': game.result,
+        'started_at': game.started_at.isoformat(),
+        'ended_at': game.ended_at.isoformat() if game.ended_at else None
+    }) 

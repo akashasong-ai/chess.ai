@@ -3,51 +3,23 @@ import os
 
 class Leaderboard:
     def __init__(self):
-        self.filename = 'leaderboard.json'
-        self.data = self.load_data()
-        
-    def load_data(self):
-        if os.path.exists(self.filename):
-            with open(self.filename, 'r') as f:
-                return json.load(f)
-        return {
-            'chess': {
-                'games': [],
-                'rankings': {}
-            },
-            'go': {
-                'games': [],
-                'rankings': {}
-            }
+        self.games = []  # Keep original list
+        self.data = {    # Add organized structure
+            'Chess': {'games': []},
+            'Go': {'games': []}
         }
-    
-    def save_data(self):
-        with open(self.filename, 'w') as f:
-            json.dump(self.data, f, indent=2)
-    
-    def add_game(self, game_type, black, white, winner, score=None):
-        game = {
-            'black': black,
+        
+    def add_game(self, white, black, winner, game_type):
+        game_data = {
             'white': white,
+            'black': black,
             'winner': winner,
-            'score': score
+            'game_type': game_type
         }
-        self.data[game_type]['games'].append(game)
         
-        # Update rankings
-        if winner not in self.data[game_type]['rankings']:
-            self.data[game_type]['rankings'][winner] = {'wins': 0, 'total_games': 0}
-        
-        # Update both players' total games
-        for player in [black, white]:
-            if player not in self.data[game_type]['rankings']:
-                self.data[game_type]['rankings'][player] = {'wins': 0, 'total_games': 0}
-            self.data[game_type]['rankings'][player]['total_games'] += 1
-        
-        # Update winner's wins
-        self.data[game_type]['rankings'][winner]['wins'] += 1
-        
-        self.save_data()
+        # Add to both structures
+        self.games.append(game_data)
+        self.data[game_type]['games'].append(game_data)
     
     def show_rankings(self, game_type=None):
         if game_type:
@@ -88,6 +60,20 @@ class Leaderboard:
             'go': go_games,
             'total': chess_games + go_games
         }
+    
+    def display_all(self):
+        print("\n=== Complete Game History ===")
+        for game in self.games:
+            print(f"{game['game_type']}: {game['white']} vs {game['black']} - Winner: {game['winner']}")
+            
+        print("\n=== Chess Games ===")
+        for game in self.data['Chess']['games']:
+            print(f"{game['white']} vs {game['black']} - Winner: {game['winner']}")
+            
+        print("\n=== Go Games ===")
+        for game in self.data['Go']['games']:
+            print(f"{game['white']} vs {game['black']} - Winner: {game['winner']}")
 
 # Create global leaderboard instance
 leaderboard = Leaderboard()
+leaderboard.display_all()

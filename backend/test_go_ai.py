@@ -69,9 +69,11 @@ def simulate_go_game():
         white="Anthropic",
         black="OpenAI",
         winner=winner,
-        moves=move_count,
         game_type="Go"
     )
+    
+    # Add this line to display the leaderboards
+    leaderboard.display_all()
 
 if __name__ == "__main__":
     simulate_go_game() 
