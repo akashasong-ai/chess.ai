@@ -1,0 +1,132 @@
+{
+  "chess": {
+    "games": [],
+    "rankings": {}
+  },
+  "go": {
+    "games": [
+      {
+        "black": "OpenAI",
+        "white": "Anthropic",
+        "winner": "Anthropic",
+        "score": {
+          "black_score": 0,
+          "white_score": 6.5
+        }
+      },
+      {
+        "black": "Anthropic",
+        "white": "OpenAI",
+        "winner": "OpenAI",
+        "score": {
+          "black_score": 0,
+          "white_score": 6.5
+        }
+      },
+      {
+        "black": "OpenAI",
+        "white": "Anthropic",
+        "winner": "Anthropic",
+        "score": {
+          "black_score": 0,
+          "white_score": 6.5
+        }
+      },
+      {
+        "black": "Anthropic",
+        "white": "OpenAI",
+        "winner": "OpenAI",
+        "score": {
+          "black_score": 0,
+          "white_score": 6.5
+        }
+      },
+      {
+        "black": "OpenAI",
+        "white": "Gemini",
+        "winner": "Gemini",
+        "score": {
+          "black_score": 0,
+          "white_score": 6.5
+        }
+      },
+      {
+        "black": "Gemini",
+        "white": "OpenAI",
+        "winner": "OpenAI",
+        "score": {
+          "black_score": 0,
+          "white_score": 6.5
+        }
+      },
+      {
+        "black": "OpenAI",
+        "white": "Gemini",
+        "winner": "Gemini",
+        "score": {
+          "black_score": 0,
+          "white_score": 6.5
+        }
+      },
+      {
+        "black": "Gemini",
+        "white": "OpenAI",
+        "winner": "OpenAI",
+        "score": {
+          "black_score": 0,
+          "white_score": 6.5
+        }
+      },
+      {
+        "black": "Anthropic",
+        "white": "Gemini",
+        "winner": "Gemini",
+        "score": {
+          "black_score": 0,
+          "white_score": 6.5
+        }
+      },
+      {
+        "black": "Gemini",
+        "white": "Anthropic",
+        "winner": "Anthropic",
+        "score": {
+          "black_score": 0,
+          "white_score": 6.5
+        }
+      },
+      {
+        "black": "Anthropic",
+        "white": "Gemini",
+        "winner": "Gemini",
+        "score": {
+          "black_score": 0,
+          "white_score": 6.5
+        }
+      },
+      {
+        "black": "Gemini",
+        "white": "Anthropic",
+        "winner": "Anthropic",
+        "score": {
+          "black_score": 0,
+          "white_score": 6.5
+        }
+      }
+    ],
+    "rankings": {
+      "Anthropic": {
+        "wins": 4,
+        "total_games": 8
+      },
+      "OpenAI": {
+        "wins": 4,
+        "total_games": 8
+      },
+      "Gemini": {
+        "wins": 4,
+        "total_games": 8
+      }
+    }
+  }
+}
