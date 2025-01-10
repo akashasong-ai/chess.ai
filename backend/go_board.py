@@ -7,10 +7,11 @@ class GoBoard:
     def get_state(self):
         return self.board
         
-    def make_move(self, row, col, color):
-        if 0 <= row < self.size and 0 <= col < self.size and self.board[row][col] == 0:
-            self.board[row][col] = color
-            self.current_player = 3 - self.current_player  # Switch between 1 and 2
+    def make_move(self, x, y):
+        if 0 <= x < self.size and 0 <= y < self.size and self.board[y][x] == 0:
+            self.board[y][x] = self.current_player
+            # Switch player
+            self.current_player = 2 if self.current_player == 1 else 1
             return True
         return False
         

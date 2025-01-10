@@ -80,10 +80,9 @@ def make_go_move():
         
     result = game.make_move(move['x'], move['y'])
     return jsonify({
-        'valid': result['valid'],
+        'valid': result,
         'board': game.get_board(),
-        'captures': game.get_captures(),
-        'status': game.get_status()
+        'currentPlayer': game.current_player
     })
 
 @app.route('/<game_type>/tournament', methods=['POST'])
