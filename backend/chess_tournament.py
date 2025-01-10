@@ -1,13 +1,19 @@
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
 import chess
 import chess.engine
 import openai
 import anthropic
-from google.ai import generativeai
-import os
+import google.generativeai as generativeai
 import asyncio
 from datetime import datetime
 from leaderboard import leaderboard
 from typing import Optional, List, Dict
+import random
 
 class ChessTournament:
     def __init__(self):
@@ -16,76 +22,59 @@ class ChessTournament:
         self.rankings = {}
         
         # Initialize AI clients
-        openai.api_key = os.getenv('OPENAI_API_KEY')
+        self.openai_client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         self.claude = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
         generativeai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
         
         # Initialize Stockfish
         self.engine = chess.engine.SimpleEngine.popen_uci("stockfish")
     
-    async def play_game(self, white, black, game_num):
-        print(f"\nGame {game_num}: {white} (White) vs {black} (Black)")
+    async def play_game(self, white_player, black_player, game_number):
+        print(f"\nGame {game_number}: {white_player} (White) vs {black_player} (Black)\n")
         board = chess.Board()
-        moves = 0
+        move_count = 1
         
-        while not board.is_game_over() and moves < 100:
-            print(f"\nMove {moves + 1}")
+        while not board.is_game_over():
+            print(f"\nMove {move_count}")
             print(board)
             
-            current = white if board.turn else black
-            
-            # Get move from LLM
-            move_uci = await self.get_move(current, board)
-            
+            current = white_player if board.turn == chess.WHITE else black_player
             try:
+                move_uci = await self.get_move(current, board)
+                if move_uci is None:
+                    break
+                    
+                # Convert UCI string to chess.Move object
                 move = chess.Move.from_uci(move_uci)
                 if move in board.legal_moves:
-                    # Get Stockfish evaluation before move
-                    info = await self.engine.analyse(board, chess.engine.Limit(time=0.1))
-                    eval_before = info['score'].white().score()
-                    
-                    # Make the move
                     board.push(move)
-                    print(f"{current} plays {move_uci}")
-                    
-                    # Get Stockfish evaluation after move
-                    info = await self.engine.analyse(board, chess.engine.Limit(time=0.1))
-                    eval_after = info['score'].white().score()
-                    
-                    # Print move quality
-                    if board.turn:  # After White's move
-                        quality = eval_after - eval_before
-                    else:  # After Black's move
-                        quality = eval_before - eval_after
-                    
-                    if quality > 50:
-                        print("Excellent move!")
-                    elif quality > 0:
-                        print("Good move")
-                    else:
-                        print("Inaccurate move")
-                    
-                    moves += 1
+                    print(f"{current} plays: {move_uci}")
                 else:
-                    print(f"Invalid move {move_uci}, trying again...")
-            except:
-                print(f"Invalid move format {move_uci}, trying again...")
+                    # Use first legal move as fallback
+                    fallback = list(board.legal_moves)[0]
+                    board.push(fallback)
+                    print(f"Invalid move {move_uci}, using {fallback.uci()}")
+                    
+                if board.turn == chess.WHITE:
+                    move_count += 1
+                    
+            except Exception as e:
+                print(f"Error during move: {e}")
+                fallback = list(board.legal_moves)[0]
+                board.push(fallback)
+                print(f"Using fallback move: {fallback.uci()}")
+                
+                if board.turn == chess.WHITE:
+                    move_count += 1
         
-        # Game over
-        print("\nGame Over!")
-        print(board)
-        
+        # Game over - determine winner
         if board.is_checkmate():
-            winner = black if board.turn else white
-            print(f"Checkmate! {winner} wins!")
+            winner = black_player if board.turn == chess.WHITE else white_player
+            print(f"\nCheckmate! {winner} wins!")
         else:
+            print("\nGame drawn!")
             winner = None
-            print("Draw!")
-        
-        # Add to leaderboard
-        leaderboard.add_game('chess', white, black, winner)
-        self.update_rankings(winner)
-        
+            
         return winner
     
     async def run_tournament(self):
@@ -132,57 +121,72 @@ class ChessTournament:
 
     async def get_move(self, player, board):
         try:
-            fen = board.fen()
             legal_moves = [move.uci() for move in board.legal_moves]
+            if not legal_moves:
+                return None
+                
+            # Get Stockfish evaluation for current position
+            info = self.engine.analyse(board, chess.engine.Limit(time=0.1))
+            eval_score = info["score"].relative.score()
             
+            prompt = f"""You are a chess master. Current position evaluation: {eval_score/100} pawns.
+            Choose the best move from these legal moves: {', '.join(legal_moves)}
+            Avoid repetitive moves. Think strategically about piece development and king safety.
+            Respond with ONLY the chosen move in UCI format."""
+                
             if player == "OpenAI":
-                try:
-                    response = await openai.chat.completions.create(
-                        model="gpt-4",
-                        messages=[{
-                            "role": "system",
-                            "content": "You are a chess master. Given a board position in FEN notation, suggest the best move in UCI format (e.g., e2e4)."
-                        }, {
-                            "role": "user",
-                            "content": f"Board position: {fen}\nLegal moves: {', '.join(legal_moves)}\nWhat's your move?"
-                        }]
-                    )
-                    move = response.choices[0].message.content.strip()
-                    return move if move in legal_moves else legal_moves[0]
-                except Exception as e:
-                    print(f"OpenAI API error: {e}")
-                    return legal_moves[0]  # Fallback to first legal move
+                completion = self.openai_client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    temperature=0.2,
+                    max_tokens=10,
+                    messages=[{
+                        "role": "system",
+                        "content": prompt
+                    }]
+                )
+                move = completion.choices[0].message.content.strip().lower()
                 
             elif player == "Anthropic":
-                try:
-                    response = await self.claude.messages.create(
-                        model="claude-3-opus-20240229",
-                        messages=[{
-                            "role": "user",
-                            "content": f"You are a chess master. Given this board position in FEN: {fen}\nLegal moves: {', '.join(legal_moves)}\nWhat's your move? Respond only with the move in UCI format (e.g., e2e4)"
-                        }]
-                    )
-                    move = response.content.strip()
-                    return move if move in legal_moves else legal_moves[0]
-                except Exception as e:
-                    print(f"Anthropic API error: {e}")
-                    return legal_moves[0]
+                response = self.claude.messages.create(
+                    model="claude-3-opus-20240229",
+                    max_tokens=10,
+                    messages=[{
+                        "role": "user",
+                        "content": prompt
+                    }]
+                )
+                move = response.content[0].text.strip().lower()
                 
             else:  # Gemini
-                try:
-                    model = generativeai.GenerativeModel('gemini-pro')
-                    response = await model.generate_content(
-                        f"You are a chess master. For this board position in FEN: {fen}\nLegal moves: {', '.join(legal_moves)}\nWhat's your move? Respond only with the move in UCI format (e.g., e2e4)"
-                    )
-                    move = response.text.strip()
-                    return move if move in legal_moves else legal_moves[0]
-                except Exception as e:
-                    print(f"Gemini API error: {e}")
-                    return legal_moves[0]
-                    
+                model = generativeai.GenerativeModel('gemini-pro')
+                response = await model.generate_content(prompt)
+                move = response.text.strip().lower()
+                
+            # Clean and validate move
+            move = ''.join(c for c in move if c.isalnum())
+            if move in legal_moves:
+                # Get evaluation after potential move
+                test_board = board.copy()
+                test_board.push(chess.Move.from_uci(move))
+                info = self.engine.analyse(test_board, chess.engine.Limit(time=0.1))
+                new_eval = info["score"].relative.score()
+                
+                print(f"{player} plays: {move} (position change: {(new_eval - eval_score)/100:.2f} pawns)")
+                return move
+                
+            print(f"Invalid move {move}, using best move")
+            # Use Stockfish's best move as fallback
+            result = self.engine.play(board, chess.engine.Limit(time=0.1))
+            return result.move.uci()
+                
         except Exception as e:
-            print(f"Error getting move: {e}")
-            return list(board.legal_moves)[0].uci()  # Fallback to first legal move
+            print(f"Error in get_move for {player}: {e}")
+            result = self.engine.play(board, chess.engine.Limit(time=0.1))
+            return result.move.uci()
+
+    def board_to_ascii(self, board):
+        """Convert chess board to ASCII representation"""
+        return str(board)
 
 if __name__ == '__main__':
     tournament = ChessTournament()
