@@ -1,0 +1,71 @@
+.ai-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  min-width: 250px;
+}
+
+.ai-selector label {
+  font-size: 1.2em;
+  color: #fff;
+}
+
+.llm-select {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #4a5568;
+  background: #2d3748;
+  color: white;
+  font-size: 1em;
+  cursor: pointer;
+}
+
+.llm-select:focus {
+  outline: none;
+  border-color: #63b3ed;
+  box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.3);
+}
+
+.llm-description {
+  font-size: 0.9em;
+  color: #a0aec0;
+  text-align: center;
+  padding: 5px;
+}
+
+.ai-controls {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.tournament-info {
+  margin: 20px 0;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  max-width: 600px;
+}
+
+.match-result {
+  margin: 8px 0;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.match-result .winner {
+  color: #68d391;
+  font-weight: bold;
+} 

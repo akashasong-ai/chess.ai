@@ -209,29 +209,22 @@ def get_game_state():
         if board is None:
             return jsonify({'error': 'No active game'}), 400
             
-        # Process tournament move if it's an AI's turn
-        if tournament_state['active']:
-            previous_fen = get_board_fen()
-            process_tournament_move()
-            current_fen = get_board_fen()
-            
-            # Log the move for debugging
-            if previous_fen != current_fen:
-                logging.debug(f"Move made: {previous_fen} -> {current_fen}")
-        
-        # Convert board to 2D array with actual piece representations
+        # Convert board to 2D array with proper piece case preservation
         board_array = []
         for row in range(7, -1, -1):
             board_row = []
             for col in range(8):
                 piece = board.piece_at(chess.square(col, row))
                 if piece:
-                    # Convert piece to proper notation (e.g., 'P' for white pawn, 'p' for black pawn)
-                    symbol = piece.symbol()
+                    # Preserve case: uppercase for white, lowercase for black
+                    symbol = piece.symbol().upper() if piece.color else piece.symbol().lower()
                     board_row.append(symbol)
                 else:
                     board_row.append(' ')
             board_array.append(board_row)
+            
+        # Log the board state for debugging
+        logging.debug(f"Current board state: {board_array}")
             
         return jsonify({
             'board': board_array,
@@ -362,6 +355,65 @@ def get_ai_move(ai_name, current_board):
     except Exception as e:
         logging.error(f"Error in get_ai_move: {str(e)}")
         return None
+
+# Add this after the other game endpoints
+@app.route('/api/game/ai-move', methods=['POST', 'OPTIONS'])
+def request_ai_move():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
+    try:
+        global board, game_state
+        if board is None or game_state is None:
+            return jsonify({'error': 'No active game'}), 400
+
+        current_player = game_state['currentPlayer']
+        current_ai = game_state['whiteAI'] if current_player == 'white' else game_state['blackAI']
+        
+        # Get AI move using the existing get_next_ai_move function
+        ai_move = get_next_ai_move(board, current_ai)
+        
+        if ai_move is None:
+            return jsonify({'error': 'No valid moves available'}), 400
+            
+        # Make the move
+        board.push(ai_move)
+        game_state['currentPlayer'] = 'black' if current_player == 'white' else 'white'
+        
+        # Convert board to 2D array with proper piece case preservation
+        board_array = []
+        for row in range(7, -1, -1):
+            board_row = []
+            for col in range(8):
+                piece = board.piece_at(chess.square(col, row))
+                if piece:
+                    # Preserve case: uppercase for white, lowercase for black
+                    symbol = piece.symbol().upper() if piece.color else piece.symbol().lower()
+                    board_row.append(symbol)
+                else:
+                    board_row.append(' ')
+            board_array.append(board_row)
+        
+        # Check for game over
+        if board.is_game_over():
+            game_state['status'] = 'finished'
+            if board.is_checkmate():
+                winner = 'black' if current_player == 'white' else 'white'
+                game_state['winner'] = game_state['whiteAI'] if winner == 'white' else game_state['blackAI']
+        
+        # Log the board state for debugging
+        logging.debug(f"Board state after move: {board_array}")
+        
+        return jsonify({
+            'success': True,
+            'move': ai_move.uci(),
+            'board': board_array,
+            'gameState': game_state
+        })
+        
+    except Exception as e:
+        logging.error(f"Error in request_ai_move: {str(e)}")
+        return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
     app.run(port=5001, debug=True) 

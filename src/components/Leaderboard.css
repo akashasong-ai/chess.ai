@@ -1,0 +1,25 @@
+.leaderboard table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.leaderboard th,
+.leaderboard td {
+  padding: 12px;
+  text-align: center;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.leaderboard th {
+  background-color: #1a1a1a;
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.leaderboard tr:last-child td {
+  border-bottom: none;
+} 
