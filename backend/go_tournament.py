@@ -31,37 +31,79 @@ class GoTournament:
         )
     
     async def get_move(self, player, board_state):
-        board_str = self.board_to_string(board_state)
+        try:
+            board_str = self.board_to_string(board_state)
+            
+            if player == "OpenAI":
+                try:
+                    response = await openai.chat.completions.create(
+                        model="gpt-4",
+                        messages=[{
+                            "role": "system",
+                            "content": "You are a Go master. Given a board position, suggest the best move in GTP format (e.g., D4)."
+                        }, {
+                            "role": "user",
+                            "content": f"Board position:\n{board_str}\nWhat's your move?"
+                        }]
+                    )
+                    return self.clean_move_response(response.choices[0].message.content)
+                except Exception as e:
+                    print(f"OpenAI API error: {e}")
+                    return self.get_random_valid_move(board_state)
+                
+            elif player == "Anthropic":
+                try:
+                    response = await self.claude.messages.create(
+                        model="claude-3-opus-20240229",
+                        messages=[{
+                            "role": "user",
+                            "content": f"You are a Go master. Given this board position:\n{board_str}\nWhat's your move? Respond only with the move in GTP format (e.g., D4)"
+                        }]
+                    )
+                    return self.clean_move_response(response.content)
+                except Exception as e:
+                    print(f"Anthropic API error: {e}")
+                    return self.get_random_valid_move(board_state)
+                
+            else:  # Gemini
+                try:
+                    model = generativeai.GenerativeModel('gemini-pro')
+                    response = await model.generate_content(
+                        f"You are a Go master. For this board position:\n{board_str}\nWhat's your move? Respond only with the move in GTP format (e.g., D4)"
+                    )
+                    return self.clean_move_response(response.text)
+                except Exception as e:
+                    print(f"Gemini API error: {e}")
+                    return self.get_random_valid_move(board_state)
+                    
+        except Exception as e:
+            print(f"Error getting move: {e}")
+            return self.get_random_valid_move(board_state)
+    
+    def clean_move_response(self, move: str) -> str:
+        """Clean and validate the move response from LLMs"""
+        # Remove any extra text, keep only the move coordinates
+        move = move.strip().upper()
+        # Extract first occurrence of valid move format (e.g., "D4")
+        import re
+        match = re.search(r'[A-HJ][1-9]', move)
+        return match.group(0) if match else "PASS"
+    
+    def get_random_valid_move(self, board_state) -> str:
+        """Generate a random valid move as fallback"""
+        import random
+        empty_positions = []
+        for i in range(self.board_size):
+            for j in range(self.board_size):
+                if board_state[i][j] == 0:
+                    empty_positions.append((i, j))
         
-        if player == "OpenAI":
-            response = await openai.chat.completions.create(
-                model="gpt-4",
-                messages=[{
-                    "role": "system",
-                    "content": "You are a Go master. Given a board position, suggest the best move in GTP format (e.g., D4)."
-                }, {
-                    "role": "user",
-                    "content": f"Board position:\n{board_str}\nWhat's your move?"
-                }]
-            )
-            return response.choices[0].message.content
+        if not empty_positions:
+            return "PASS"
             
-        elif player == "Anthropic":
-            response = await self.claude.messages.create(
-                model="claude-3-opus-20240229",
-                messages=[{
-                    "role": "user",
-                    "content": f"You are a Go master. Given this board position:\n{board_str}\nWhat's your move? Respond only with the move in GTP format (e.g., D4)"
-                }]
-            )
-            return response.content
-            
-        else:  # Gemini
-            model = generativeai.GenerativeModel('gemini-pro')
-            response = await model.generate_content(
-                f"You are a Go master. For this board position:\n{board_str}\nWhat's your move? Respond only with the move in GTP format (e.g., D4)"
-            )
-            return response.text
+        row, col = random.choice(empty_positions)
+        col_letter = chr(ord('A') + (col + 1 if col >= 8 else col))
+        return f"{col_letter}{row + 1}"
     
     async def play_game(self, black, white, game_num):
         print(f"\nGame {game_num}: {black} (Black) vs {white} (White)")

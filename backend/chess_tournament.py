@@ -131,38 +131,58 @@ class ChessTournament:
         leaderboard.show_rankings()
 
     async def get_move(self, player, board):
-        fen = board.fen()
-        legal_moves = [move.uci() for move in board.legal_moves]
-        
-        if player == "OpenAI":
-            response = await openai.chat.completions.create(
-                model="gpt-4",
-                messages=[{
-                    "role": "system",
-                    "content": "You are a chess master. Given a board position in FEN notation, suggest the best move in UCI format (e.g., e2e4)."
-                }, {
-                    "role": "user",
-                    "content": f"Board position: {fen}\nLegal moves: {', '.join(legal_moves)}\nWhat's your move?"
-                }]
-            )
-            return response.choices[0].message.content
+        try:
+            fen = board.fen()
+            legal_moves = [move.uci() for move in board.legal_moves]
             
-        elif player == "Anthropic":
-            response = await self.claude.messages.create(
-                model="claude-3-opus-20240229",
-                messages=[{
-                    "role": "user",
-                    "content": f"You are a chess master. Given this board position in FEN: {fen}\nLegal moves: {', '.join(legal_moves)}\nWhat's your move? Respond only with the move in UCI format (e.g., e2e4)"
-                }]
-            )
-            return response.content
-            
-        else:  # Gemini
-            model = generativeai.GenerativeModel('gemini-pro')
-            response = await model.generate_content(
-                f"You are a chess master. For this board position in FEN: {fen}\nLegal moves: {', '.join(legal_moves)}\nWhat's your move? Respond only with the move in UCI format (e.g., e2e4)"
-            )
-            return response.text
+            if player == "OpenAI":
+                try:
+                    response = await openai.chat.completions.create(
+                        model="gpt-4",
+                        messages=[{
+                            "role": "system",
+                            "content": "You are a chess master. Given a board position in FEN notation, suggest the best move in UCI format (e.g., e2e4)."
+                        }, {
+                            "role": "user",
+                            "content": f"Board position: {fen}\nLegal moves: {', '.join(legal_moves)}\nWhat's your move?"
+                        }]
+                    )
+                    move = response.choices[0].message.content.strip()
+                    return move if move in legal_moves else legal_moves[0]
+                except Exception as e:
+                    print(f"OpenAI API error: {e}")
+                    return legal_moves[0]  # Fallback to first legal move
+                
+            elif player == "Anthropic":
+                try:
+                    response = await self.claude.messages.create(
+                        model="claude-3-opus-20240229",
+                        messages=[{
+                            "role": "user",
+                            "content": f"You are a chess master. Given this board position in FEN: {fen}\nLegal moves: {', '.join(legal_moves)}\nWhat's your move? Respond only with the move in UCI format (e.g., e2e4)"
+                        }]
+                    )
+                    move = response.content.strip()
+                    return move if move in legal_moves else legal_moves[0]
+                except Exception as e:
+                    print(f"Anthropic API error: {e}")
+                    return legal_moves[0]
+                
+            else:  # Gemini
+                try:
+                    model = generativeai.GenerativeModel('gemini-pro')
+                    response = await model.generate_content(
+                        f"You are a chess master. For this board position in FEN: {fen}\nLegal moves: {', '.join(legal_moves)}\nWhat's your move? Respond only with the move in UCI format (e.g., e2e4)"
+                    )
+                    move = response.text.strip()
+                    return move if move in legal_moves else legal_moves[0]
+                except Exception as e:
+                    print(f"Gemini API error: {e}")
+                    return legal_moves[0]
+                    
+        except Exception as e:
+            print(f"Error getting move: {e}")
+            return list(board.legal_moves)[0].uci()  # Fallback to first legal move
 
 if __name__ == '__main__':
     tournament = ChessTournament()
