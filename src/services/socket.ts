@@ -1,9 +1,11 @@
-import { io, Socket } from 'socket.io-client';
+import { Socket, io } from 'socket.io-client';
 import { GameState } from './api';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
 interface ServerToClientEvents {
+  connect: () => void;
+  disconnect: () => void;
   game_update: (state: GameState) => void;
   error: (error: Error) => void;
 }
@@ -15,10 +17,14 @@ interface ClientToServerEvents {
 
 export class GameSocket {
   private socket: Socket<ServerToClientEvents, ClientToServerEvents>;
+
   private gameId: string | null = null;
 
   constructor() {
-    this.socket = io(SOCKET_URL);
+    this.socket = io(SOCKET_URL, {
+      autoConnect: true,
+      reconnection: true
+    });
     this.setupListeners();
   }
 
@@ -44,12 +50,14 @@ export class GameSocket {
     }
   }
 
-  onGameUpdate(callback: (state: GameState) => void): void {
+  onGameUpdate(callback: (state: GameState) => void): () => void {
     this.socket.on('game_update', callback);
+    return () => this.socket.off('game_update', callback);
   }
 
-  onError(callback: (error: Error) => void): void {
+  onError(callback: (error: Error) => void): () => void {
     this.socket.on('error', callback);
+    return () => this.socket.off('error', callback);
   }
 
   disconnect(): void {
