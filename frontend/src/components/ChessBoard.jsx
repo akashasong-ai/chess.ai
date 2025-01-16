@@ -1,9 +1,11 @@
-import { Box, Grid, GridItem, Text, VStack, HStack, Button, useToast } from '@chakra-ui/react'
+import { Box, Grid, GridItem, Text, VStack, HStack, Button } from '@chakra-ui/react'
+import { useToast } from '@chakra-ui/toast'
 import { useState, useEffect } from 'react'
 import { Chess } from 'chess.js'
 import { api } from '../services/api'
+import PropTypes from 'prop-types'
 
-function ChessBoard({ mode }) {
+function ChessBoard({ mode, whiteAI, blackAI }) {
   const [game, setGame] = useState(new Chess())
   const [selectedSquare, setSelectedSquare] = useState(null)
   const [gameState, setGameState] = useState(null)
@@ -13,16 +15,6 @@ function ChessBoard({ mode }) {
   useEffect(() => {
     const initGame = async () => {
       try {
-        let whiteAI = null
-        let blackAI = null
-        
-        if (mode === 'ai-vs-ai') {
-          whiteAI = 'GPT-4'
-          blackAI = 'CLAUDE'
-        } else if (mode === 'player-vs-ai') {
-          blackAI = 'GPT-4'
-        }
-        
         await api.startGame(whiteAI, blackAI)
         const state = await api.getGameState()
         setGameState(state)
@@ -45,7 +37,7 @@ function ChessBoard({ mode }) {
     return () => {
       api.cleanup()
     }
-  }, [mode])
+  }, [mode, toast])
 
   useEffect(() => {
     const handleAIMove = async () => {
@@ -72,7 +64,7 @@ function ChessBoard({ mode }) {
     }
 
     handleAIMove()
-  }, [gameState, isPlayerTurn])
+  }, [gameState, isPlayerTurn, game, toast])
 
   const setupWebSocket = () => {
     api.onConnect(() => {
@@ -100,18 +92,18 @@ function ChessBoard({ mode }) {
         key={square}
         w="60px"
         h="60px"
-        bg={isLight ? 'gray.200' : 'gray.600'}
+        bg={isLight ? 'orange.50' : 'orange.400'}
         display="flex"
         alignItems="center"
         justifyContent="center"
         cursor="pointer"
         onClick={() => handleSquareClick(square)}
         position="relative"
-        _hover={{ bg: selectedSquare === square ? 'blue.400' : (isLight ? 'blue.100' : 'blue.500') }}
-        backgroundColor={selectedSquare === square ? 'blue.400' : (isLight ? 'gray.200' : 'gray.600')}
+        _hover={{ bg: selectedSquare === square ? 'blue.400' : (isLight ? 'orange.100' : 'orange.500') }}
+        backgroundColor={selectedSquare === square ? 'blue.400' : (isLight ? 'orange.50' : 'orange.400')}
       >
         {piece && (
-          <Text fontSize="2xl">
+          <Text fontSize="4xl">
             {getPieceSymbol(piece)}
           </Text>
         )}
@@ -189,7 +181,28 @@ function ChessBoard({ mode }) {
           <Text fontSize="xl" fontWeight="bold">
             {mode === 'player-vs-ai' ? 'Player vs AI' : 'AI vs AI'}
           </Text>
-          <Button colorScheme="blue" size="sm">
+          <Button 
+            colorScheme="blue" 
+            size="sm" 
+            onClick={async () => {
+              try {
+                await api.startGame(whiteAI, blackAI)
+                const newState = await api.getGameState()
+                setGame(new Chess(newState.gameState.fen))
+                setGameState(newState)
+                setSelectedSquare(null)
+                setIsPlayerTurn(newState.gameState.currentPlayer === 'white' && !whiteAI)
+              } catch (error) {
+                toast({
+                  title: 'Error starting new game',
+                  description: error.message,
+                  status: 'error',
+                  duration: 3000,
+                  isClosable: true,
+                })
+              }
+            }}
+          >
             New Game
           </Button>
         </HStack>
@@ -202,6 +215,12 @@ function ChessBoard({ mode }) {
       </VStack>
     </Box>
   )
+}
+
+ChessBoard.propTypes = {
+  mode: PropTypes.string.isRequired,
+  whiteAI: PropTypes.string,
+  blackAI: PropTypes.string
 }
 
 export default ChessBoard

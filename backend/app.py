@@ -1,12 +1,15 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_socketio import SocketIO
 import chess
 import random
 import logging
+import os
 from itertools import combinations
 import time
+from websocket import socketio  # Import the socketio instance from websocket.py
 
-app = Flask(__name__, static_folder='../frontend/dist', static_url_path='')
+app = Flask(__name__, static_folder='../frontend/dist', static_url_path='/')
 CORS(app, resources={
     r"/*": {
         "origins": ["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174",
@@ -18,13 +21,16 @@ CORS(app, resources={
 logging.basicConfig(level=logging.DEBUG)
 
 # Serve static files
-@app.route('/')
-def serve_index():
-    return app.send_static_file('index.html')
-
+@app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_static(path):
-    return app.send_static_file(path)
+    try:
+        if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+            return app.send_static_file(path)
+        return app.send_static_file('index.html')
+    except Exception as e:
+        logging.error(f"Error serving static file: {str(e)}")
+        return app.send_static_file('index.html')
 
 # Global variables
 board = None
@@ -41,7 +47,8 @@ tournament_state = {
 leaderboard = {
     'GPT-4': {'wins': 0, 'losses': 0},
     'CLAUDE': {'wins': 0, 'losses': 0},
-    'GEMINI': {'wins': 0, 'losses': 0}
+    'GEMINI': {'wins': 0, 'losses': 0},
+    'PERPLEXITY': {'wins': 0, 'losses': 0}
 }
 
 def start_new_game(white_ai=None, black_ai=None):
@@ -310,6 +317,14 @@ def get_leaderboard():
         return '', 200
         
     try:
+        # Filter to include only AI players
+        ai_players = ['GPT-4', 'CLAUDE', 'GEMINI', 'PERPLEXITY']
+        ai_leaderboard = {
+            player: stats 
+            for player, stats in leaderboard.items() 
+            if player in ai_players
+        }
+        
         return jsonify({
             'success': True,
             'leaderboard': [
@@ -319,7 +334,7 @@ def get_leaderboard():
                     'losses': stats['losses'],
                     'winRate': round(stats['wins'] / (stats['wins'] + stats['losses']) * 100, 1) if (stats['wins'] + stats['losses']) > 0 else 0
                 }
-                for player, stats in leaderboard.items()
+                for player, stats in ai_leaderboard.items()
             ]
         })
     except Exception as e:
@@ -426,4 +441,5 @@ def request_ai_move():
         return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True)   
+    socketio.init_app(app, cors_allowed_origins="*")
+    socketio.run(app, port=5001, debug=True)       

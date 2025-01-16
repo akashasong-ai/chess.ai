@@ -1,8 +1,8 @@
 from flask_socketio import SocketIO, emit
 from flask import request
-from flask import current_app as app
 
-socketio = SocketIO(app, cors_allowed_origins="*")
+# Create socketio instance without app - we'll init it later
+socketio = SocketIO(cors_allowed_origins="*")
 
 @socketio.on('connect')
 def handle_connect():
