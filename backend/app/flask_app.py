@@ -221,8 +221,10 @@ def get_board_fen():
 @app.route('/api/game/state', methods=['GET'])
 def get_game_state():
     try:
-        if board is None or game_state is None:
+        if board is None:
             return jsonify({'error': 'No active game'}), 400
+        if game_state is None:
+            return jsonify({'error': 'No active game state'}), 400
             
         # Convert board to 2D array with proper piece case preservation
         board_array = []
@@ -260,7 +262,7 @@ def get_game_state():
 def make_move():
     try:
         global board, game_state
-        if board is None:
+        if board is None or game_state is None:
             return jsonify({'error': 'No active game'}), 400
 
         data = request.get_json()
@@ -274,14 +276,17 @@ def make_move():
         
         if chess_move in board.legal_moves:
             board.push(chess_move)
-            game_state['currentPlayer'] = 'black' if game_state['currentPlayer'] == 'white' else 'white'
+            current_player = game_state.get('currentPlayer', 'white')
+            game_state['currentPlayer'] = 'black' if current_player == 'white' else 'white'
             
             # Check for game over conditions
             if board.is_game_over():
                 game_state['status'] = 'finished'
                 if board.is_checkmate():
-                    winner = 'black' if game_state['currentPlayer'] == 'white' else 'white'
-                    game_state['winner'] = game_state['whiteAI'] if winner == 'white' else game_state['blackAI']
+                    winner = 'black' if current_player == 'white' else 'white'
+                    white_ai = game_state.get('whiteAI')
+                    black_ai = game_state.get('blackAI')
+                    game_state['winner'] = white_ai if winner == 'white' else black_ai
                 
             return jsonify({
                 'success': True,
@@ -382,8 +387,10 @@ def request_ai_move():
         if board is None or game_state is None:
             return jsonify({'error': 'No active game'}), 400
 
-        current_player = game_state['currentPlayer']
-        current_ai = game_state['whiteAI'] if current_player == 'white' else game_state['blackAI']
+        current_player = game_state.get('currentPlayer', 'white')
+        white_ai = game_state.get('whiteAI')
+        black_ai = game_state.get('blackAI')
+        current_ai = white_ai if current_player == 'white' else black_ai
         
         # Get AI move using the existing get_next_ai_move function
         ai_move = get_next_ai_move(board, current_ai)
@@ -431,4 +438,4 @@ def request_ai_move():
         return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True)      
+    app.run(port=5001, debug=True)            

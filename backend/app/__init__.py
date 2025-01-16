@@ -1,20 +1,19 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 
-db = SQLAlchemy()
+# Create Flask app
+flask_app = Flask(__name__)
 
-def create_app():
-    app = Flask(__name__)
-    
-    # Move config import inside function to avoid circular imports
-    from config import Config
-    app.config.from_object(Config)
+# Import game state first
+from .flask_app import board, game_state, tournament_state, leaderboard
 
-    db.init_app(app)
+# Then import FastAPI app
+from .main import app
 
-    with app.app_context():
-        # Import routes after db is initialized
-        from app.routes import main
-        app.register_blueprint(main)
-
-    return app
+__all__ = [
+    'app',
+    'flask_app',
+    'board',
+    'game_state',
+    'tournament_state',
+    'leaderboard'
+]
