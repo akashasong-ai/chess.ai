@@ -22,13 +22,33 @@ if not all([OPENAI_KEY, ANTHROPIC_KEY, GOOGLE_KEY]):
 
 # Add this after the API key checks
 print("API Keys loaded successfully:")
-print(f"OpenAI: {OPENAI_KEY[:8]}...")  # Only print first 8 chars
-print(f"Anthropic: {ANTHROPIC_KEY[:8]}...")
-print(f"Google: {GOOGLE_KEY[:8]}...")
+print(f"OpenAI: {OPENAI_KEY[:6] + '...' if OPENAI_KEY else 'Not found'}")
+print(f"Anthropic: {ANTHROPIC_KEY[:6] + '...' if ANTHROPIC_KEY else 'Not found'}")
+print(f"Google: {GOOGLE_KEY[:6] + '...' if GOOGLE_KEY else 'Not found'}")
 
 app = Flask(__name__)
-CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+CORS(app, 
+    resources={
+        r"/*": {
+            "origins": ["http://localhost:5173"],
+            "allow_credentials": True,
+            "methods": ["GET", "POST", "OPTIONS"],
+            "allow_headers": ["Content-Type"]
+        }
+    },
+    supports_credentials=True
+)
+socketio = SocketIO(app, 
+    cors_allowed_origins=["http://localhost:5173"],
+    async_mode='threading',
+    logger=True,
+    engineio_logger=True,
+    ping_timeout=60000,
+    ping_interval=25000,
+    allow_credentials=True,
+    transports=['websocket', 'polling'],
+    cors_credentials=True
+)
 
 # Initialize game storage
 chess_games = {}
@@ -68,7 +88,7 @@ def make_chess_move():
 def start_go_game():
     data = request.json
     game_id = len(go_games)
-    go_games[game_id] = GoBoard(data['player1'], data['player2'])
+    go_games[game_id] = GoBoard()  # Use default size of 19x19
     return jsonify({'gameId': game_id, 'board': go_games[game_id].get_board()})
 
 @app.route('/go/move', methods=['POST'])
@@ -138,4 +158,11 @@ def handle_move(data):
             emit('gameUpdate', game.get_status(), broadcast=True)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, port=5001)
+    socketio.run(app, 
+        host='127.0.0.1',
+        port=5001, 
+        debug=True,
+        use_reloader=True,
+        log_output=True,
+        allow_unsafe_werkzeug=True  # Required for development server
+    )
