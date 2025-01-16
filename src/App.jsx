@@ -5,14 +5,16 @@ import './App.css';
 
 function App() {
   const [leaderboard, setLeaderboard] = useState([]);
-  const [isTournament, setIsTournament] = useState(false);
+  // Tournament mode state - will be used for tournament functionality
+  // const [isTournament, setIsTournament] = useState(false);
 
   return (
     <div className="App">
       <div className="main-content">
         <ChessBoard 
           setLeaderboard={setLeaderboard}
-          setIsTournament={setIsTournament}
+          // Tournament functionality temporarily disabled
+          // setIsTournament={setIsTournament}
         />
         <div className="leaderboard-section">
           <h2>All-Time Rankings</h2>
