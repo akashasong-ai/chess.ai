@@ -145,4 +145,4 @@ export const GoBoard: React.FC<GoBoardProps> = ({
   );
 };
 
-export default GoBoard;                                                                                                                                                                                                                                                                                                                                                                                          
+export default GoBoard;

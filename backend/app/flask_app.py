@@ -5,6 +5,12 @@ import random
 import logging
 from itertools import combinations
 import time
+import os
+from pathlib import Path
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app, resources={
@@ -48,6 +54,10 @@ def start_new_game(white_ai=None, black_ai=None):
 # Add these helper functions at the top
 def get_next_ai_move(board, ai_name):
     try:
+        if board is None:
+            logger.error("Board is None in get_next_ai_move")
+            return None
+            
         if board.is_game_over():
             return None
             
@@ -60,17 +70,22 @@ def get_next_ai_move(board, ai_name):
         return best_move if best_move else random.choice(legal_moves)
         
     except Exception as e:
-        logging.error(f"Error getting AI move: {str(e)}")
+        logger.error(f"Error getting AI move: {str(e)}")
         return None
 
 def process_tournament_move():
     try:
         global board, game_state
-        if not tournament_state['active'] or not game_state:
+        if not tournament_state['active'] or not game_state or board is None:
+            logger.debug("Tournament not active, game state None, or board None")
             return
             
         current_match = tournament_state['matches'][tournament_state['current_match']]
-        current_player = game_state['currentPlayer']
+        current_player = game_state.get('currentPlayer')
+        if not current_player:
+            logger.error("Current player not set in game state")
+            return
+            
         ai_name = current_match['white'] if current_player == 'white' else current_match['black']
         
         # Add delay to make moves visible
@@ -78,7 +93,7 @@ def process_tournament_move():
         
         move = get_next_ai_move(board, ai_name)
         if move:
-            logging.debug(f"{ai_name} making move: {move}")
+            logger.debug(f"{ai_name} making move: {move}")
             board.push(move)
             game_state['currentPlayer'] = 'black' if current_player == 'white' else 'white'
             
@@ -91,7 +106,7 @@ def process_tournament_move():
                 handle_game_over(winner)
                 
     except Exception as e:
-        logging.error(f"Error in process_tournament_move: {str(e)}")
+        logger.error(f"Error in process_tournament_move: {str(e)}")
 
 # Tournament endpoints
 @app.route('/api/tournament/start', methods=['POST'])
@@ -208,6 +223,8 @@ def get_game_state():
     try:
         if board is None:
             return jsonify({'error': 'No active game'}), 400
+        if game_state is None:
+            return jsonify({'error': 'No active game state'}), 400
             
         # Convert board to 2D array with proper piece case preservation
         board_array = []
@@ -224,17 +241,17 @@ def get_game_state():
             board_array.append(board_row)
             
         # Log the board state for debugging
-        logging.debug(f"Current board state: {board_array}")
+        logger.debug(f"Current board state: {board_array}")
             
         return jsonify({
             'board': board_array,
             'gameState': {
                 'status': 'finished' if board.is_game_over() else 'active',
-                'currentPlayer': game_state['currentPlayer'],
-                'whiteAI': game_state['whiteAI'],
-                'blackAI': game_state['blackAI'],
+                'currentPlayer': game_state.get('currentPlayer', 'white'),
+                'whiteAI': game_state.get('whiteAI'),
+                'blackAI': game_state.get('blackAI'),
                 'winner': game_state.get('winner'),
-                'fen': board.fen()  # Include FEN for debugging
+                'fen': board.fen() if board else None  # Include FEN for debugging
             }
         })
     except Exception as e:
@@ -245,7 +262,7 @@ def get_game_state():
 def make_move():
     try:
         global board, game_state
-        if board is None:
+        if board is None or game_state is None:
             return jsonify({'error': 'No active game'}), 400
 
         data = request.get_json()
@@ -259,14 +276,17 @@ def make_move():
         
         if chess_move in board.legal_moves:
             board.push(chess_move)
-            game_state['currentPlayer'] = 'black' if game_state['currentPlayer'] == 'white' else 'white'
+            current_player = game_state.get('currentPlayer', 'white')
+            game_state['currentPlayer'] = 'black' if current_player == 'white' else 'white'
             
             # Check for game over conditions
             if board.is_game_over():
                 game_state['status'] = 'finished'
                 if board.is_checkmate():
-                    winner = 'black' if game_state['currentPlayer'] == 'white' else 'white'
-                    game_state['winner'] = game_state['whiteAI'] if winner == 'white' else game_state['blackAI']
+                    winner = 'black' if current_player == 'white' else 'white'
+                    white_ai = game_state.get('whiteAI')
+                    black_ai = game_state.get('blackAI')
+                    game_state['winner'] = white_ai if winner == 'white' else black_ai
                 
             return jsonify({
                 'success': True,
@@ -367,8 +387,10 @@ def request_ai_move():
         if board is None or game_state is None:
             return jsonify({'error': 'No active game'}), 400
 
-        current_player = game_state['currentPlayer']
-        current_ai = game_state['whiteAI'] if current_player == 'white' else game_state['blackAI']
+        current_player = game_state.get('currentPlayer', 'white')
+        white_ai = game_state.get('whiteAI')
+        black_ai = game_state.get('blackAI')
+        current_ai = white_ai if current_player == 'white' else black_ai
         
         # Get AI move using the existing get_next_ai_move function
         ai_move = get_next_ai_move(board, current_ai)
@@ -416,4 +438,4 @@ def request_ai_move():
         return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True)    
+    app.run(port=5001, debug=True)

@@ -56,4 +56,4 @@ class GameSocket {
   }
 }
 
-export const gameSocket = new GameSocket();                                                                                                                                                
+export const gameSocket = new GameSocket();

@@ -234,4 +234,4 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       </div>
     </div>
   );
-};                                                                                                                                                                                    
+};                                                                                                                        

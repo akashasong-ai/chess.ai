@@ -1,3 +1,5 @@
+// AI player configuration
+
 export interface AIPlayer {
   id: string;
   name: string;
