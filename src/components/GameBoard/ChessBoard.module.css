@@ -6,6 +6,10 @@
   padding: 20px;
   max-width: 800px;
   margin: 0 auto;
+  background-color: #2a2a2a;
+  color: #f2f2f2;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .playerSelection {
@@ -25,16 +29,18 @@
 
 .playerColumn h3 {
   margin: 0;
-  color: #333;
+  color: #f2f2f2;
 }
 
 .playerColumn select {
   padding: 8px;
   border-radius: 4px;
-  border: 1px solid #ccc;
+  border: 1px solid #444;
   font-size: 14px;
   min-width: 200px;
-  background-color: white;
+  background-color: #333;
+  color: #f2f2f2;
+  outline: none;
 }
 
 .gameControls {
@@ -45,20 +51,21 @@
   padding: 10px 20px;
   border-radius: 4px;
   border: none;
-  background-color: #4CAF50;
-  color: white;
+  background-color: #7fa650;
+  color: #f2f2f2;
   font-size: 16px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .gameControls button:disabled {
-  background-color: #cccccc;
+  background-color: #444;
+  color: #666;
   cursor: not-allowed;
 }
 
 .gameControls button:hover:not(:disabled) {
-  background-color: #45a049;
+  background-color: #8fb660;
 }
 
 .chessBoard {
@@ -66,7 +73,8 @@
   flex-direction: column;
   width: 560px;
   height: 560px;
-  border: 2px solid #333;
+  border: 2px solid #1a1a1a;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .rank {
@@ -81,11 +89,11 @@
 }
 
 .square:nth-child(odd) {
-  background-color: #f0d9b5;
+  background-color: #e6e6d8;  /* cream colored squares */
 }
 
 .square:nth-child(even) {
-  background-color: #b58863;
+  background-color: #7fa650;  /* olive green squares */
 }
 
 .piece {
@@ -98,7 +106,7 @@
 }
 
 .selected {
-  background-color: rgba(255, 255, 0, 0.5) !important;
+  background-color: rgba(127, 166, 80, 0.5) !important; /* Match the green theme */
 }
 
 .validMove::after {
@@ -106,7 +114,7 @@
   position: absolute;
   width: 25%;
   height: 25%;
-  background-color: rgba(0, 255, 0, 0.3);
+  background-color: rgba(127, 166, 80, 0.4); /* Match the green theme */
   border-radius: 50%;
   top: 50%;
   left: 50%;
@@ -126,4 +134,4 @@
 .black.knight { background-image: url('/pieces/black-knight.svg'); }
 .black.bishop { background-image: url('/pieces/black-bishop.svg'); }
 .black.queen { background-image: url('/pieces/black-queen.svg'); }
-.black.king { background-image: url('/pieces/black-king.svg'); }         
+.black.king { background-image: url('/pieces/black-king.svg'); }                                                                                                            
