@@ -90,8 +90,8 @@ function ChessBoard({ mode, whiteAI, blackAI }) {
     return (
       <GridItem
         key={square}
-        w="60px"
-        h="60px"
+        w="80px"
+        h="80px"
         bg={isLight ? 'orange.50' : 'orange.400'}
         display="flex"
         alignItems="center"
@@ -103,7 +103,7 @@ function ChessBoard({ mode, whiteAI, blackAI }) {
         backgroundColor={selectedSquare === square ? 'blue.400' : (isLight ? 'orange.50' : 'orange.400')}
       >
         {piece && (
-          <Text fontSize="4xl">
+          <Text fontSize="6xl">
             {getPieceSymbol(piece)}
           </Text>
         )}
@@ -165,7 +165,7 @@ function ChessBoard({ mode, whiteAI, blackAI }) {
   return (
     <Box>
       <Grid
-        templateColumns="repeat(8, 60px)"
+        templateColumns="repeat(8, 80px)"
         gap={0}
         border="2px"
         borderColor="gray.300"
