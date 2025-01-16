@@ -1,5 +1,6 @@
-import React from 'react';
 import './styles.css';
+
+import PropTypes from 'prop-types';
 
 const GameTypeSelect = ({ onSelect }) => {
     return (
@@ -25,6 +26,10 @@ const GameTypeSelect = ({ onSelect }) => {
             </div>
         </div>
     );
+};
+
+GameTypeSelect.propTypes = {
+    onSelect: PropTypes.func.isRequired
 };
 
 export default GameTypeSelect;

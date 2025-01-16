@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -26,22 +26,22 @@ export interface GameState {
 
 export const gameService = {
   async startGame(gameType: GameType, player1: string, player2: string): Promise<string> {
-    const { data } = await api.post<{ gameId: string }>('/game/start', { gameType, player1, player2 });
+    const { data } = await api.post<{ gameId: string }>(`/${gameType}/start`, { player1, player2 });
     return data.gameId;
   },
 
   async getGameState(gameId: string): Promise<GameState> {
-    const { data } = await api.get<GameState>(`/game/${gameId}`);
+    const { data } = await api.get<GameState>(`/chess/state/${gameId}`);
     return data;
   },
 
   async makeMove(gameId: string, move: GameMove): Promise<GameState> {
-    const { data } = await api.post<GameState>(`/game/${gameId}/move`, move);
+    const { data } = await api.post<GameState>(`/chess/move`, { gameId, move });
     return data;
   },
 
   async getLeaderboard(gameType: GameType): Promise<Array<{ player: string; score: number }>> {
-    const { data } = await api.get<Array<{ player: string; score: number }>>(`/leaderboard/${gameType}`);
+    const { data } = await api.get<Array<{ player: string; score: number }>>(`/${gameType}/leaderboard`);
     return data;
   },
-}; 
+};            

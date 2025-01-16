@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit
 from dotenv import load_dotenv
 import os
 from chess_engine import ChessGame
@@ -27,6 +28,7 @@ print(f"Google: {GOOGLE_KEY[:8]}...")
 
 app = Flask(__name__)
 CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Initialize game storage
 chess_games = {}
@@ -108,5 +110,32 @@ def get_leaderboard(game_type):
     else:
         return jsonify(go_leaderboard.get_rankings())
 
+# Socket.IO event handlers
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')
+
+@socketio.on('joinGame')
+def handle_join_game(game_id):
+    print(f'Client joined game {game_id}')
+
+@socketio.on('leaveGame')
+def handle_leave_game():
+    print('Client left game')
+
+@socketio.on('move')
+def handle_move(data):
+    game_id = data.get('gameId')
+    move = data.get('move')
+    if game_id in chess_games:
+        game = chess_games[game_id]
+        result = game.make_move(move['from'], move['to'])
+        if result['valid']:
+            emit('gameUpdate', game.get_status(), broadcast=True)
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    socketio.run(app, debug=True, port=5001)

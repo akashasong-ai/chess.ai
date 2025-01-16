@@ -16,10 +16,20 @@ export interface ChessMove {
 }
 
 export interface ChessGameState {
-  board: Record<string, ChessPiece>;
+  board: Record<string, ChessPiece | null>;
   currentTurn: PieceColor;
   moves: ChessMove[];
   isCheck: boolean;
   isCheckmate: boolean;
   isStalemate: boolean;
-} 
+  moveCount: number;  // Track number of moves to enforce white's first move
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  name: string;
+  wins: number;
+  draws: number;
+  losses: number;
+  winRate: number;
+}                            

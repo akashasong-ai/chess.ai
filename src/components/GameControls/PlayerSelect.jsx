@@ -1,4 +1,4 @@
-import React from 'react';
+import PropTypes from 'prop-types';
 import './styles.css';
 
 const PlayerSelect = ({ aiOptions, onSelectPlayer1, onSelectPlayer2, gameType }) => {
@@ -39,6 +39,18 @@ const PlayerSelect = ({ aiOptions, onSelectPlayer1, onSelectPlayer2, gameType })
             </div>
         </div>
     );
+};
+
+PlayerSelect.propTypes = {
+  aiOptions: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired
+    })
+  ).isRequired,
+  onSelectPlayer1: PropTypes.func.isRequired,
+  onSelectPlayer2: PropTypes.func.isRequired,
+  gameType: PropTypes.oneOf(['chess', 'go']).isRequired
 };
 
 export default PlayerSelect;
