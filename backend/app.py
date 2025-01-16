@@ -260,16 +260,26 @@ def make_move():
         # Convert move to chess.Move object
         chess_move = chess.Move.from_uci(move)
         
+        if board is None or game_state is None:
+            return jsonify({'error': 'Invalid game state'}), 400
+
         if chess_move in board.legal_moves:
             board.push(chess_move)
+            game_state['moveCount'] = game_state.get('moveCount', 0) + 1
+            game_state['lastMoveTime'] = time.time()
             game_state['currentPlayer'] = 'black' if game_state['currentPlayer'] == 'white' else 'white'
             
-            # Check for game over conditions
+            # Check for game over with proper validation
             if board.is_game_over():
-                game_state['status'] = 'finished'
-                if board.is_checkmate():
-                    winner = 'black' if game_state['currentPlayer'] == 'white' else 'white'
-                    game_state['winner'] = game_state['whiteAI'] if winner == 'white' else game_state['blackAI']
+                # Double check it's really game over by validating the position
+                if board.is_checkmate() or board.is_stalemate() or board.is_insufficient_material():
+                    game_state['status'] = 'finished'
+                    if board.is_checkmate():
+                        winner = 'black' if game_state['currentPlayer'] == 'white' else 'white'
+                        game_state['winner'] = game_state.get('whiteAI') if winner == 'white' else game_state.get('blackAI')
+                    logging.info(f"Game over detected in make_move. Status: {'checkmate' if board.is_checkmate() else 'draw'}")
+                else:
+                    logging.warning("make_move: is_game_over() returned true but no specific end condition found")
                 
             return jsonify({
                 'success': True,
@@ -408,12 +418,17 @@ def request_ai_move():
                     board_row.append(' ')
             board_array.append(board_row)
         
-        # Check for game over
+        # Check for game over with proper validation
         if board.is_game_over():
-            game_state['status'] = 'finished'
-            if board.is_checkmate():
-                winner = 'black' if current_player == 'white' else 'white'
-                game_state['winner'] = game_state['whiteAI'] if winner == 'white' else game_state['blackAI']
+            # Double check it's really game over by validating the position
+            if board.is_checkmate() or board.is_stalemate() or board.is_insufficient_material():
+                game_state['status'] = 'finished'
+                if board.is_checkmate():
+                    winner = 'black' if current_player == 'white' else 'white'
+                    game_state['winner'] = game_state['whiteAI'] if winner == 'white' else game_state['blackAI']
+                logging.info(f"Game over detected. Status: {'checkmate' if board.is_checkmate() else 'draw'}")
+            else:
+                logging.warning("is_game_over() returned true but no specific end condition found")
         
         # Log the board state for debugging
         logging.debug(f"Board state after move: {board_array}")
@@ -430,4 +445,4 @@ def request_ai_move():
         return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True)      
+    app.run(port=5001, debug=True)                                                            

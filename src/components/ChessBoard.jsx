@@ -400,7 +400,9 @@ const ChessBoard = () => {
         const response = await gameApi.getGameState();
         
         if (response?.gameState) {
-          if (response.gameState.status === 'finished') {
+          // Only reset if game is truly finished and we've made at least one move
+          if (response.gameState.status === 'finished' && response.gameState.moveCount > 0) {
+            console.log('Game finished. Move count:', response.gameState.moveCount);
             const finalMessage = response.gameState.winner ? 
               `🎉 Game Over - ${response.gameState.winner} wins! 🏆` :
               '🤝 Game Over - Draw! ⭐';
@@ -724,4 +726,4 @@ const ChessBoard = () => {
   );
 };
 
-export default ChessBoard;   
+export default ChessBoard;         
