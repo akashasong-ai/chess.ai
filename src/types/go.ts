@@ -16,9 +16,4 @@ export interface GoMove {
   color: StoneColor;
 }
 
-export interface GoGameUpdate {
-  board: number[][];
-  lastMove?: { x: number; y: number };
-  gameOver?: boolean;
-  winner?: StoneColor;
-}
+export interface GoGameUpdate extends GoGameState {}

@@ -1,5 +1,3 @@
-import { GameType } from '../services/api';
-
 export interface AIPlayer {
   id: string;
   name: string;
@@ -16,6 +14,6 @@ export const getAIPlayer = (id: string): AIPlayer | undefined => {
   return AI_PLAYERS.find(player => player.id === id);
 };
 
-export const getAIPlayers = (gameType?: GameType): AIPlayer[] => {
+export const getAIPlayers = (): AIPlayer[] => {
   return AI_PLAYERS;
 };
