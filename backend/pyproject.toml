@@ -1,29 +1,36 @@
-[project]
+[tool.poetry]
 name = "chess-ai"
 version = "0.1.0"
 description = "Chess AI Game Backend"
-dependencies = [
-    "flask==2.2.5",
-    "flask-cors==3.0.10",
-    "flask-socketio==5.3.6",
-    "python-dotenv==1.0.0",
-    "werkzeug==2.2.3",
-    "python-engineio==4.2.1",
-    "python-socketio==5.4.0",
-    "python-chess==1.999",
-    "openai==1.12.0",
-    "anthropic==0.18.0",
-    "google-generativeai==0.3.2",
-    "simple-websocket==1.0.0",
-    "fastapi==0.109.0",
-    "uvicorn[standard]==0.27.0",
-    "python-multipart==0.0.6",
-    "websockets==12.0"
-]
+authors = ["Devin AI <devin@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+flask = "2.2.5"
+flask-cors = "3.0.10"
+flask-socketio = "5.3.6"
+python-dotenv = "1.0.0"
+werkzeug = "2.2.3"
+python-engineio = "4.2.1"
+python-socketio = "5.4.0"
+python-chess = "1.999"
+openai = "1.12.0"
+anthropic = "0.18.0"
+google-generativeai = "0.3.2"
+simple-websocket = "1.0.0"
+fastapi = "0.109.0"
+uvicorn = {extras = ["standard"], version = "0.27.0"}
+python-multipart = "0.0.6"
+websockets = "12.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-asyncio = "^0.21.0"
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
