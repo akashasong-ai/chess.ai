@@ -14,24 +14,27 @@ const AISelector = ({ position, selectedAI, onSelect }) => {
     <div className="ai-selector">
       <label>{position} Player:</label>
       <select 
-        value={selectedAI || ''}
-        onChange={(e) => onSelect(e.target.value)}
+        value={selectedAI?.id || ''}
+        onChange={(e) => {
+          const selected = AI_PLAYERS.find(ai => ai.id === e.target.value);
+          onSelect(selected);
+        }}
         className="llm-select"
       >
         <option value="">Select an AI Model</option>
-        {AI_PLAYERS.map((llm) => (
-          <option key={llm.id} value={llm.id}>
-            {llm.name}
+        {AI_PLAYERS.map((ai) => (
+          <option key={ai.id} value={ai.id}>
+            {ai.name}
           </option>
         ))}
       </select>
       {selectedAI && (
         <div className="llm-description">
-          {AI_PLAYERS.find(llm => llm.id === selectedAI)?.description}
+          {selectedAI.description}
         </div>
       )}
     </div>
   );
 };
 
-export default AISelector;      
+export default AISelector;         

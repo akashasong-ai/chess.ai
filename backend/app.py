@@ -189,10 +189,14 @@ def start_game():
         return '', 200
         
     try:
+        global board, game_state
         data = request.get_json()
         white_ai = data.get('whiteAI')
         black_ai = data.get('blackAI')
         
+        if not white_ai or not black_ai:
+            return jsonify({'error': 'Both AI players must be specified'}), 400
+            
         # Map player IDs to display names
         ai_mapping = {
             'gpt4': 'GPT-4',
@@ -203,8 +207,35 @@ def start_game():
         
         white_name = ai_mapping.get(white_ai, white_ai)
         black_name = ai_mapping.get(black_ai, black_ai)
-        success = start_new_game(white_name, black_name)
-        return jsonify({'success': success})
+        
+        # Initialize new game
+        board = chess.Board()
+        game_state = {
+            'status': 'active',
+            'currentPlayer': 'white',
+            'whiteAI': white_name,
+            'blackAI': black_name,
+            'winner': None
+        }
+        
+        # Convert board to 2D array for response
+        board_array = []
+        for row in range(7, -1, -1):
+            board_row = []
+            for col in range(8):
+                piece = board.piece_at(chess.square(col, row))
+                if piece:
+                    symbol = piece.symbol().upper() if piece.color else piece.symbol().lower()
+                    board_row.append(symbol)
+                else:
+                    board_row.append(' ')
+            board_array.append(board_row)
+            
+        return jsonify({
+            'success': True,
+            'board': board_array,
+            'gameState': game_state
+        })
     except Exception as e:
         logging.error(f"Error in start_game: {str(e)}")
         return jsonify({'error': str(e)}), 400
@@ -290,6 +321,59 @@ def make_move():
             
     except Exception as e:
         logging.error(f"Error in make_move: {str(e)}")
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/game/move/wait', methods=['GET'])
+def wait_for_ai_move():
+    try:
+        global board, game_state
+        if board is None or game_state is None:
+            return jsonify({'error': 'No active game'}), 400
+
+        current_player = game_state['currentPlayer']
+        current_ai = game_state['whiteAI'] if current_player == 'white' else game_state['blackAI']
+        
+        # Get legal moves
+        legal_moves = list(board.legal_moves)
+        if not legal_moves:
+            return jsonify({'error': 'No legal moves available'}), 400
+        
+        # Make a random move for now (will be replaced with actual AI logic)
+        move = random.choice(legal_moves)
+        board.push(move)
+        
+        # Update game state
+        game_state['currentPlayer'] = 'black' if current_player == 'white' else 'white'
+        
+        # Check for game over
+        if board.is_game_over():
+            game_state['status'] = 'finished'
+            if board.is_checkmate():
+                winner = 'black' if current_player == 'white' else 'white'
+                game_state['winner'] = game_state['whiteAI'] if winner == 'white' else game_state['blackAI']
+        
+        # Convert board to 2D array
+        board_array = []
+        for row in range(7, -1, -1):
+            board_row = []
+            for col in range(8):
+                piece = board.piece_at(chess.square(col, row))
+                if piece:
+                    symbol = piece.symbol().upper() if piece.color else piece.symbol().lower()
+                    board_row.append(symbol)
+                else:
+                    board_row.append(' ')
+            board_array.append(board_row)
+        
+        return jsonify({
+            'success': True,
+            'move': move.uci(),
+            'board': board_array,
+            'gameState': game_state
+        })
+        
+    except Exception as e:
+        logging.error(f"Error in wait_for_ai_move: {str(e)}")
         return jsonify({'error': str(e)}), 400
 
 @app.route('/api/game/stop', methods=['POST'])
@@ -427,4 +511,4 @@ def request_ai_move():
         return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True)   
+    app.run(port=5001, debug=True)         

@@ -22,8 +22,8 @@ const initialBoard = [
   ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']   // White pieces (solid)
 ];
 
-// Add this at the top of your component
-export const AI_PLAYERS = [
+// Define AI players as a constant
+const AI_PLAYERS = [
   { id: 'gpt4', name: 'GPT-4', description: 'OpenAI GPT-4' },
   { id: 'claude2', name: 'Claude 2', description: 'Anthropic Claude 2' },
   { id: 'gemini', name: 'Gemini Pro', description: 'Google Gemini Pro' },
@@ -203,18 +203,9 @@ const getStatusMessage = (gameState, lastMove, includeThinking = true) => {
   return baseStatus;
 };
 
-const ChessBoard = () => {
+const ChessBoard = ({ selectedWhiteAI, selectedBlackAI }) => {
   // State declarations
   const [board, setBoard] = useState(initialBoard);
-  const [selectedWhiteAI, setSelectedWhiteAI] = useState(() => {
-    const randomAI = AI_PLAYERS[Math.floor(Math.random() * AI_PLAYERS.length)];
-    return randomAI;
-  });
-  const [selectedBlackAI, setSelectedBlackAI] = useState(() => {
-    // Get a random AI that's different from white's AI
-    const availableAIs = AI_PLAYERS.filter(ai => ai.id !== selectedWhiteAI.id);
-    return availableAIs[Math.floor(Math.random() * availableAIs.length)];
-  });
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTournament, setIsTournament] = useState(false);
   const [error, setError] = useState(null);
@@ -232,6 +223,13 @@ const ChessBoard = () => {
 
   // Game control functions
   const startGame = async () => {
+    if (!selectedWhiteAI?.id || !selectedBlackAI?.id) {
+      const errorMsg = 'Please select both players';
+      setError(errorMsg);
+      setGameStatus(`Error: ${errorMsg}`);
+      return;
+    }
+    
     if (selectedWhiteAI.id === selectedBlackAI.id) {
       const errorMsg = 'An AI cannot play against itself';
       setError(errorMsg);
@@ -243,7 +241,7 @@ const ChessBoard = () => {
       setError(null);
       setCurrentPlayer('white');
       setGameStatus('Starting new game...');
-      console.log('Starting new game...');
+      console.log('Starting new game...', { white: selectedWhiteAI.id, black: selectedBlackAI.id });
       const response = await gameApi.startGame(selectedWhiteAI.id, selectedBlackAI.id);
       if (response.success) {
         setIsPlaying(true);
@@ -633,39 +631,14 @@ const ChessBoard = () => {
         </table>
       </div>
 
-      <div className="player-selection">
-        <div className="player-box">
-          <h3>White Player:</h3>
-          <select 
-            value={selectedWhiteAI} 
-            onChange={(e) => handlePlayerSelection('white', e.target.value)}
-          >
-            <option value="GPT-4">GPT-4</option>
-            <option value="Claude 2">Claude 2</option>
-            <option value="Gemini Pro">Gemini Pro</option>
-          </select>
-          <div className="player-description">
-            {selectedWhiteAI === 'GPT-4' && 'OpenAI GPT-4'}
-            {selectedWhiteAI === 'Claude 2' && 'Anthropic Claude 2'}
-            {selectedWhiteAI === 'Gemini Pro' && 'Google Gemini Pro'}
-          </div>
+      <div className="game-info">
+        <div className="player-info">
+          <h3>White: {selectedWhiteAI?.name || 'Select Player'}</h3>
+          <div className="player-description">{selectedWhiteAI?.description}</div>
         </div>
-
-        <div className="player-box">
-          <h3>Black Player:</h3>
-          <select 
-            value={selectedBlackAI} 
-            onChange={(e) => handlePlayerSelection('black', e.target.value)}
-          >
-            <option value="GPT-4">GPT-4</option>
-            <option value="Claude 2">Claude 2</option>
-            <option value="Gemini Pro">Gemini Pro</option>
-          </select>
-          <div className="player-description">
-            {selectedBlackAI === 'GPT-4' && 'OpenAI GPT-4'}
-            {selectedBlackAI === 'Claude 2' && 'Anthropic Claude 2'}
-            {selectedBlackAI === 'Gemini Pro' && 'Google Gemini Pro'}
-          </div>
+        <div className="player-info">
+          <h3>Black: {selectedBlackAI?.name || 'Select Player'}</h3>
+          <div className="player-description">{selectedBlackAI?.description}</div>
         </div>
       </div>
 
@@ -726,4 +699,4 @@ const ChessBoard = () => {
   );
 };
 
-export default ChessBoard;               
+export default ChessBoard;                           
