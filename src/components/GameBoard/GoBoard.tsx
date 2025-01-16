@@ -7,7 +7,7 @@ import type { GoGameUpdate } from '../../types/go';
 import styles from './GoBoard.module.css';
 
 interface GoBoardProps {
-  setLeaderboard: (leaderboard: Array<{ id: string; name: string; wins: number; draws: number; losses: number; winRate: number }>) => void;
+  setLeaderboard: (leaderboard: Array<{ player: string; score: number }>) => void;
   gameId?: string;
   isSpectator?: boolean;
 }
@@ -33,7 +33,7 @@ export const GoBoard: React.FC<GoBoardProps> = ({
     if (gameId) {
       gameSocket.joinGame(gameId);
       
-      const unsubscribe = gameSocket.onGameUpdate((state: GoGameUpdate) => {
+      const unsubscribe = gameSocket.onGameUpdate<GoGameUpdate>((state) => {
         if (Array.isArray(state.board)) {
           setBoard(state.board);
         }
@@ -42,16 +42,7 @@ export const GoBoard: React.FC<GoBoardProps> = ({
         }
         
         if (state.gameOver) {
-          gameService.getLeaderboard('go').then(leaderboard => 
-            setLeaderboard(leaderboard.map(entry => ({
-              id: entry.player,
-              name: entry.player,
-              wins: Math.floor(entry.score),
-              draws: 0,
-              losses: 0,
-              winRate: entry.score
-            })))
-          );
+          gameService.getLeaderboard('go').then(setLeaderboard);
         }
       });
 
@@ -154,4 +145,4 @@ export const GoBoard: React.FC<GoBoardProps> = ({
   );
 };
 
-export default GoBoard;                                                               
+export default GoBoard;                                                                                                                                                                                                                                                                                                                                                                                          

@@ -17,9 +17,9 @@ export interface GameMove {
 }
 
 export interface GameState {
-  board: string[][];
+  board: string[][] | Record<string, any> | number[][];
   currentPlayer: string;
-  moves: GameMove[];
+  moves?: GameMove[];
   status: GameStatus;
   winner?: string;
 }
@@ -44,4 +44,4 @@ export const gameService = {
     const { data } = await api.get<Array<{ player: string; score: number }>>(`/${gameType}/leaderboard`);
     return data;
   },
-};            
+};                                    
