@@ -1,8 +1,37 @@
-# React + Vite
+# Chess.AI - AI Game Arena
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A comprehensive AI Game Arena featuring chess and go game simulations with real-time multiplayer capabilities.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Chess and Go game simulations
+- Real-time multiplayer game interactions
+- AI player management
+- Tournament system
+- Leaderboard tracking
+- WebSocket-based communication
+
+## Tech Stack
+
+- Frontend: React + Vite
+- Backend: Python (Flask)
+- Real-time Communication: WebSocket
+- Development Tools:
+  - TypeScript for type safety
+  - ESLint for code quality
+  - Vitest for testing
+
+## Development
+
+To start development:
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Run tests
+npm run test
+```
