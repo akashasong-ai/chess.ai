@@ -170,15 +170,16 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     }
   };
 
-  const renderSquare = (position: string) => {
+  const renderSquare = (position: string, index: number) => {
     const piece = gameState?.board[position];
     const isSelected = position === selectedSquare;
     const isValidMove = possibleMoves.includes(position);
+    const isDark = (Math.floor(index / 8) + (index % 8)) % 2 === 1;
 
     return (
       <div 
         key={position}
-        className={`${styles.square} ${isSelected ? styles.selected : ''} ${isValidMove ? styles.validMove : ''}`}
+        className={`${styles.square} ${isDark ? styles.dark : ''} ${isSelected ? styles.selected : ''} ${isValidMove ? styles.validMove : ''}`}
         onClick={() => handleSquareClick(position)}
       >
         {piece && (
@@ -186,17 +187,6 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
         )}
       </div>
     );
-  };
-
-  const renderBoard = () => {
-    const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
-    const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-    
-    return ranks.map(rank => (
-      <div key={rank} className={styles.rank}>
-        {files.map(file => renderSquare(`${file}${rank}`))}
-      </div>
-    ));
   };
 
   return (
@@ -229,9 +219,26 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
           {isPlaying ? 'Stop Game' : 'Start Game'}
         </button>
       </div>
-      <div className={styles.chessBoard}>
-        {renderBoard()}
+      <div className={styles.boardWrapper}>
+        <div className={styles.board}>
+          {ranks.map((rank, rankIndex) => (
+            <div key={rank} className={styles.rank}>
+              <div className={styles.rankLabel}>{rank}</div>
+              {files.map((file, fileIndex) => {
+                const position = `${file}${rank}`;
+                const index = rankIndex * 8 + fileIndex;
+                return renderSquare(position, index);
+              })}
+            </div>
+          ))}
+        </div>
+        <div className={styles.fileLabels}>
+          <div className={styles.fileLabel}></div>
+          {files.map((file) => (
+            <div key={file} className={styles.fileLabel}>{file}</div>
+          ))}
+        </div>
       </div>
     </div>
   );
-};                                                                                                                                                                                    
+};                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
