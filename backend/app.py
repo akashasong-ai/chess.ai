@@ -1,15 +1,15 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 import chess
 import random
 import logging
 import os
 from itertools import combinations
 import time
-from websocket import socketio  # Import the socketio instance from websocket.py
 
 app = Flask(__name__, static_folder='../frontend/dist', static_url_path='/')
+socketio = SocketIO(app, cors_allowed_origins="*")
 CORS(app, resources={
     r"/*": {
         "origins": ["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174",
@@ -440,6 +440,27 @@ def request_ai_move():
         logging.error(f"Error in request_ai_move: {str(e)}")
         return jsonify({'error': str(e)}), 400
 
+# WebSocket event handlers
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')
+
+@socketio.on('move')
+def handle_move(data):
+    try:
+        move = data.get('move')
+        if not move:
+            return {'error': 'No move provided'}
+            
+        result = make_move(move)
+        emit('game_update', result, broadcast=True)
+    except Exception as e:
+        logging.error(f"Error in handle_move: {str(e)}")
+        return {'error': str(e)}
+
 if __name__ == '__main__':
-    socketio.init_app(app, cors_allowed_origins="*")
-    socketio.run(app, port=5001, debug=True)       
+    socketio.run(app, port=5001, debug=True)  
