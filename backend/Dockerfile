@@ -14,6 +14,6 @@ COPY --from=builder /app/.venv /app/.venv
 COPY . .
 
 ENV PATH="/app/.venv/bin:$PATH"
-ENV PORT=8080
+ENV HOST="0.0.0.0"
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD python -m uvicorn app.main:app --host ${HOST} --port ${PORT}

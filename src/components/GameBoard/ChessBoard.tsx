@@ -6,7 +6,7 @@ import { gameService } from '../../services/api';
 import { AI_PLAYERS } from '../../config/ai';
 
 interface ChessBoardProps {
-  setLeaderboard: (leaderboard: Array<{ id: string; name: string; wins: number; draws: number; losses: number; winRate: number }>) => void;
+  setLeaderboard: (leaderboard: Array<{ player: string; score: number }>) => void;
   gameId?: string;
   playerColor?: 'white' | 'black';
   isSpectator?: boolean;
@@ -234,4 +234,4 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       </div>
     </div>
   );
-};                              
+};                                                                                                                        

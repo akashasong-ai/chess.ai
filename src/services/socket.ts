@@ -41,7 +41,7 @@ class GameSocket {
     this.socket.emit('leaveGame');
   }
 
-  onGameUpdate(callback: (state: ChessGameState) => void) {
+  onGameUpdate<T = ChessGameState>(callback: (state: T) => void) {
     this.socket.on('gameUpdate', callback);
     return () => this.socket.off('gameUpdate', callback);
   }
@@ -56,4 +56,4 @@ class GameSocket {
   }
 }
 
-export const gameSocket = new GameSocket();                        
+export const gameSocket = new GameSocket();                                                                                                
