@@ -1,12 +1,11 @@
-import React from 'react';
 
-const GoBoard = ({ player1, player2 }) => {
-  // Add go board implementation
+
+const GoBoard = () => {
   return (
     <div className="go-board">
-      {/* Add board rendering */}
+      {/* Board implementation moved to GoBoard component */}
     </div>
   );
 };
 
-export default GoBoard; 
+export default GoBoard;    

@@ -1,4 +1,3 @@
-import React from 'react';
 
 const ChessLeaderboard = () => {
   // Add chess leaderboard implementation
@@ -9,4 +8,4 @@ const ChessLeaderboard = () => {
   );
 };
 
-export default ChessLeaderboard; 
+export default ChessLeaderboard;    

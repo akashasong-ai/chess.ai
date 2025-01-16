@@ -1,4 +1,3 @@
-import React from 'react';
 
 const GoLeaderboard = () => {
   // Add go leaderboard implementation
@@ -9,4 +8,4 @@ const GoLeaderboard = () => {
   );
 };
 
-export default GoLeaderboard; 
+export default GoLeaderboard;    

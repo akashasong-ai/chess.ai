@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types';
+
 const TournamentLeaderboard = ({ leaderboard }) => {
   return (
     <div className="tournament-leaderboard">
@@ -29,4 +31,16 @@ const TournamentLeaderboard = ({ leaderboard }) => {
   );
 };
 
-export default TournamentLeaderboard; 
+TournamentLeaderboard.propTypes = {
+    leaderboard: PropTypes.arrayOf(
+        PropTypes.shape({
+            id: PropTypes.string.isRequired,
+            name: PropTypes.string.isRequired,
+            wins: PropTypes.number.isRequired,
+            draws: PropTypes.number.isRequired,
+            losses: PropTypes.number.isRequired
+        })
+    ).isRequired
+};
+
+export default TournamentLeaderboard;      

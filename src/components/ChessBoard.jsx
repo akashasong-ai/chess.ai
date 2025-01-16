@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
+// This file is deprecated. Please use GameBoard/ChessBoard.tsx instead.
+// Keeping this file for reference until the new implementation is fully tested.
+/*
+import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { gameApi } from '../services/api';
 import './ChessBoard.css';
 
 // Define piece mappings to ensure consistent characters
-const PIECES = {
-  // Black pieces (solid black)
-  'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
-  // White pieces (solid white)
-  'R': '♜', 'N': '♞', 'B': '♝', 'Q': '♛', 'K': '♚', 'P': '♟'
-};
+// Commented out until needed for future feature implementation
+// const PIECES = {
+//   // Black pieces (solid black)
+//   'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
+//   // White pieces (solid white)
+//   'R': '♜', 'N': '♞', 'B': '♝', 'Q': '♛', 'K': '♚', 'P': '♟'
+// };
 
 // Update the initial board state with solid white pieces
 const initialBoard = [
@@ -22,8 +27,7 @@ const initialBoard = [
   ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']   // White pieces (solid)
 ];
 
-// Add this at the top of your component
-const AI_PLAYERS = ['GPT-4', 'Claude 2', 'Gemini Pro'];
+import { AI_PLAYERS } from '../config/ai';
 
 // Helper function to get random AI player
 const getRandomAI = (excludeAI = null) => {
@@ -55,29 +59,29 @@ const PIECE_MAPPING = {
 
 // Add constants for polling intervals
 const REGULAR_POLL_INTERVAL = 300; // 0.3 seconds for moves
-const STATUS_UPDATE_INTERVAL = 150; // 0.15 seconds for status messages
+// const STATUS_UPDATE_INTERVAL = 150; // 0.15 seconds for status messages - will be used for future status updates
 const TOURNAMENT_POLL_INTERVAL = 1;
 
-// Add helper function to check if game should end
-const isGameOver = (board, gameState) => {
-  // Only check for game over if explicitly stated in gameState
-  if (gameState && gameState.checkmate) return true;
-  if (gameState && gameState.stalemate) return true;
-  
-  // Count kings as backup validation
-  let whiteKing = false;
-  let blackKing = false;
-  
-  board.forEach(row => {
-    row.forEach(piece => {
-      if (piece === '♔') whiteKing = true;
-      if (piece === '♚') blackKing = true;
-    });
-  });
-
-  // Only return true if a king is actually missing
-  return (!whiteKing || !blackKing);
-};
+// Add helper function to check if game should end - commented out until game end validation is implemented
+// const isGameOver = (board, gameState) => {
+//   // Only check for game over if explicitly stated in gameState
+//   if (gameState && gameState.checkmate) return true;
+//   if (gameState && gameState.stalemate) return true;
+//   
+//   // Count kings as backup validation
+//   let whiteKing = false;
+//   let blackKing = false;
+//   
+//   board.forEach(row => {
+//     row.forEach(piece => {
+//       if (piece === '♔') whiteKing = true;
+//       if (piece === '♚') blackKing = true;
+//     });
+//   });
+//
+//   // Only return true if a king is actually missing
+//   return (!whiteKing || !blackKing);
+// };
 
 // Add piece validation constants
 const VALID_PIECES = {
@@ -85,52 +89,52 @@ const VALID_PIECES = {
   black: ['♚', '♛', '♜', '♝', '♞', '♟']
 };
 
-// Add board validation function
-const isValidBoard = (board) => {
-  // Check board dimensions
-  if (!board || board.length !== 8 || !board.every(row => row.length === 8)) {
-    return false;
-  }
-
-  let whiteKingCount = 0;
-  let blackKingCount = 0;
-  let whitePawnCount = 0;
-  let blackPawnCount = 0;
-
-  // Check each piece
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 8; col++) {
-      const piece = board[row][col];
-      
-      // Skip empty squares
-      if (piece === ' ') continue;
-
-      // Validate piece type
-      if (!VALID_PIECES.white.includes(piece) && !VALID_PIECES.black.includes(piece)) {
-        console.error('Invalid piece detected:', piece);
-        return false;
-      }
-
-      // Count kings and pawns
-      if (piece === '♔') whiteKingCount++;
-      if (piece === '♚') blackKingCount++;
-      if (piece === '♙') whitePawnCount++;
-      if (piece === '♟') blackPawnCount++;
-    }
-  }
-
-  // Validate piece counts
-  if (whiteKingCount !== 1 || blackKingCount !== 1) {
-    console.error('Invalid number of kings');
-    return false;
-  }
-  if (whitePawnCount > 8 || blackPawnCount > 8) {
-    console.error('Too many pawns');
-    return false;
-  }
-
-  return true;
-};
+// Add board validation function - commented out until board validation is implemented
+// const isValidBoard = (board) => {
+//   // Check board dimensions
+//   if (!board || board.length !== 8 || !board.every(row => row.length === 8)) {
+//     return false;
+//   }
+//
+//   let whiteKingCount = 0;
+//   let blackKingCount = 0;
+//   let whitePawnCount = 0;
+//   let blackPawnCount = 0;
+//
+//   // Check each piece
+//   for (let row = 0; row < 8; row++) {
+//     for (let col = 0; col < 8; col++) {
+//       const piece = board[row][col];
+//       
+//       // Skip empty squares
+//       if (piece === ' ') continue;
+//
+//       // Validate piece type
+//       if (!VALID_PIECES.white.includes(piece) && !VALID_PIECES.black.includes(piece)) {
+//         console.error('Invalid piece detected:', piece);
+//         return false;
+//       }
+//
+//       // Count kings and pawns
+//       if (piece === '♔') whiteKingCount++;
+//       if (piece === '♚') blackKingCount++;
+//       if (piece === '♙') whitePawnCount++;
+//       if (piece === '♟') blackPawnCount++;
+//     }
+//   }
+//
+//   // Validate piece counts
+//   if (whiteKingCount !== 1 || blackKingCount !== 1) {
+//     console.error('Invalid number of kings');
+//     return false;
+//   }
+//   if (whitePawnCount > 8 || blackPawnCount > 8) {
+//     console.error('Too many pawns');
+//     return false;
+//   }
+//
+//   return true;
+// };
 
 // Expanded set of thinking messages with more variety and personality
 const THINKING_MESSAGES = [
@@ -161,42 +165,42 @@ const THINKING_MESSAGES = [
   "Considering prophylactic moves... 🎪"
 ];
 
-// Add the status message helper function
-const getStatusMessage = (gameState, lastMove, includeThinking = true) => {
-  if (!gameState) return 'Game not started';
-  
-  const currentAI = gameState.currentPlayer === 'white' ? gameState.whiteAI : gameState.blackAI;
-  
-  if (gameState.status === 'finished') {
-    if (gameState.winner) {
-      return `🎉 Game Over - ${gameState.winner} wins in spectacular fashion! 🏆`;
-    }
-    return '🤝 Game Over - A hard-fought draw! ⭐';
-  }
-
-  // Base status without thinking message
-  let baseStatus = `${currentAI}'s turn (${gameState.currentPlayer})`;
-  
-  // Add last move if available
-  if (lastMove) {
-    const previousAI = gameState.currentPlayer === 'white' ? 
-      response.gameState.blackAI : response.gameState.whiteAI;
-    baseStatus += ` | Last move by ${previousAI}: ${lastMove}`;
-  }
-
-  // Add check status if in check
-  if (gameState.isCheck) {
-    baseStatus += ' | ⚠️ CHECK! ⚠️';
-  }
-
-  // Add thinking message if requested
-  if (includeThinking) {
-    const randomMsg = THINKING_MESSAGES[Math.floor(Math.random() * THINKING_MESSAGES.length)];
-    baseStatus += ` | ${randomMsg}`;
-  }
-
-  return baseStatus;
-};
+// Add the status message helper function - commented out until status message formatting is implemented
+// const getStatusMessage = (gameState, lastMove, includeThinking = true) => {
+//   if (!gameState) return 'Game not started';
+//   
+//   const currentAI = gameState.currentPlayer === 'white' ? gameState.whiteAI : gameState.blackAI;
+//   
+//   if (gameState.status === 'finished') {
+//     if (gameState.winner) {
+//       return `🎉 Game Over - ${gameState.winner} wins in spectacular fashion! 🏆`;
+//     }
+//     return '🤝 Game Over - A hard-fought draw! ⭐';
+//   }
+//
+//   // Base status without thinking message
+//   let baseStatus = `${currentAI}'s turn (${gameState.currentPlayer})`;
+//   
+//   // Add last move if available
+//   if (lastMove) {
+//     const previousAI = gameState.currentPlayer === 'white' ? 
+//       gameState.blackAI : gameState.whiteAI;
+//     baseStatus += ` | Last move by ${previousAI}: ${lastMove}`;
+//   }
+//
+//   // Add check status if in check
+//   if (gameState.isCheck) {
+//     baseStatus += ' | ⚠️ CHECK! ⚠️';
+//   }
+//
+//   // Add thinking message if requested
+//   if (includeThinking) {
+//     const randomMsg = THINKING_MESSAGES[Math.floor(Math.random() * THINKING_MESSAGES.length)];
+//     baseStatus += ` | ${randomMsg}`;
+//   }
+//
+//   return baseStatus;
+// };
 
 const ChessBoard = () => {
   // State declarations
@@ -214,14 +218,15 @@ const ChessBoard = () => {
   const [isTournament, setIsTournament] = useState(false);
   const [error, setError] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
-  const [shouldPollLeaderboard, setShouldPollLeaderboard] = useState(false);
+  // Tournament and status tracking state - commented out until these features are implemented
+  // const [shouldPollLeaderboard, setShouldPollLeaderboard] = useState(false);
   const [gameStatus, setGameStatus] = useState('Select AI players and click Start Game to start');
-  const [lastValidBoard, setLastValidBoard] = useState(initialBoard);
-  const [statusIndex, setStatusIndex] = useState(0);
-  const [currentPlayer, setCurrentPlayer] = useState('white');
-  const [isTournamentActive, setIsTournamentActive] = useState(false);
-  const [tournamentRound, setTournamentRound] = useState(0);
-  const [tournamentMatches, setTournamentMatches] = useState([]);
+  // const [lastValidBoard, setLastValidBoard] = useState(initialBoard);
+  // const [statusIndex, setStatusIndex] = useState(0);
+  // const [currentPlayer, setCurrentPlayer] = useState('white');
+  // const [isTournamentActive, setIsTournamentActive] = useState(false);
+  // const [tournamentRound, setTournamentRound] = useState(0);
+  // const [tournamentMatches, setTournamentMatches] = useState([]);
   const [thinkingMessage, setThinkingMessage] = useState('');
   const [tournamentLeaderboard, setTournamentLeaderboard] = useState([]);
 
@@ -533,18 +538,18 @@ const ChessBoard = () => {
     }
   };
 
-  // Helper function to count differences between boards
-  const countBoardDifferences = (oldBoard, newBoard) => {
-    let differences = 0;
-    for (let i = 0; i < 8; i++) {
-      for (let j = 0; j < 8; j++) {
-        if (oldBoard[i][j] !== newBoard[i][j]) {
-          differences++;
-        }
-      }
-    }
-    return differences;
-  };
+  // Helper function to count differences between boards - commented out until board comparison is needed
+  // const countBoardDifferences = (oldBoard, newBoard) => {
+  //   let differences = 0;
+  //   for (let i = 0; i < 8; i++) {
+  //     for (let j = 0; j < 8; j++) {
+  //       if (oldBoard[i][j] !== newBoard[i][j]) {
+  //         differences++;
+  //       }
+  //     }
+  //   }
+  //   return differences;
+  // };
 
   // Disable board validation for initial setup
   useEffect(() => {
@@ -561,7 +566,7 @@ const ChessBoard = () => {
               })
             );
             setBoard(newBoard);
-            setLastValidBoard(newBoard);
+            // setLastValidBoard(newBoard); // Commented out until board state tracking is implemented
           }
           // ... rest of polling logic
         } catch (error) {
@@ -721,4 +726,9 @@ const ChessBoard = () => {
   );
 };
 
-export default ChessBoard; 
+ChessBoard.propTypes = {
+  setLeaderboard: PropTypes.func.isRequired
+};
+
+// export default ChessBoard;
+*/                     
