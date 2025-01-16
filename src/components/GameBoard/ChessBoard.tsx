@@ -6,7 +6,7 @@ import { gameService } from '../../services/api';
 import { AI_PLAYERS } from '../../config/ai';
 
 interface ChessBoardProps {
-  setLeaderboard: (leaderboard: Array<{ id: string; name: string; wins: number; draws: number; losses: number; winRate: number }>) => void;
+  setLeaderboard: (leaderboard: Array<{ player: string; score: number }>) => void;
   gameId?: string;
   playerColor?: 'white' | 'black';
   isSpectator?: boolean;
@@ -86,7 +86,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     if (gameId) {
       gameSocket.joinGame(gameId);
       
-      const unsubscribe = gameSocket.onGameUpdate((state) => {
+      const unsubscribe = gameSocket.onGameUpdate<ChessGameState>((state) => {
         const chessState: ChessGameState = {
           board: state.board || {},
           currentTurn: state.currentTurn as 'white' | 'black',
@@ -234,4 +234,4 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       </div>
     </div>
   );
-};                              
+};                                                                                                                                                                                    
