@@ -1,6 +1,6 @@
 import io from 'socket.io-client';
 import type { ChessGameState } from '../types/chess';
-import type { GoGameState } from '../types/go';
+import type { GoGameState, GoGameUpdate } from '../types/go';
 import type { LeaderboardEntry } from '../types/leaderboard';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
@@ -41,9 +41,9 @@ class GameSocket {
     this.socket.emit('leaveGame');
   }
 
-  onGameUpdate<T = ChessGameState>(callback: (state: T) => void) {
-    this.socket.on('gameUpdate', callback);
-    return () => this.socket.off('gameUpdate', callback);
+  onGameUpdate<T extends ChessGameState | GoGameUpdate>(callback: (state: T) => void) {
+    this.socket.on('gameUpdate', callback as (state: any) => void);
+    return () => this.socket.off('gameUpdate', callback as (state: any) => void);
   }
 
   onLeaderboardUpdate(callback: (data: LeaderboardEntry[]) => void) {
@@ -56,4 +56,4 @@ class GameSocket {
   }
 }
 
-export const gameSocket = new GameSocket();                                                                                                
+export const gameSocket = new GameSocket();

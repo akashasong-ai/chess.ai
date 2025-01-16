@@ -32,23 +32,23 @@ export const Leaderboard: React.FC = () => {
       <table className={styles.table}>
         <thead>
           <tr>
-            <th>Rank</th>
             <th>Player</th>
-            <th>Rating</th>
-            <th>W/L/D</th>
+            <th>Score</th>
             <th>Win Rate</th>
-            <th>Streak</th>
+            <th>Wins</th>
+            <th>Losses</th>
+            <th>Draws</th>
           </tr>
         </thead>
         <tbody>
           {leaderboard.map((entry) => (
-            <tr key={entry.id} className={styles.row}>
-              <td>{entry.rank}</td>
-              <td>{entry.username}</td>
-              <td>{entry.rating}</td>
-              <td>{`${entry.wins}/${entry.losses}/${entry.draws}`}</td>
-              <td>{`${(entry.winRate * 100).toFixed(1)}%`}</td>
-              <td>{entry.winStreak > 0 ? `+${entry.winStreak}` : entry.winStreak}</td>
+            <tr key={entry.player} className={styles.row}>
+              <td>{entry.player}</td>
+              <td>{entry.score}</td>
+              <td>{entry.winRate ? `${(entry.winRate * 100).toFixed(1)}%` : 'N/A'}</td>
+              <td>{entry.wins || 0}</td>
+              <td>{entry.losses || 0}</td>
+              <td>{entry.draws || 0}</td>
             </tr>
           ))}
         </tbody>

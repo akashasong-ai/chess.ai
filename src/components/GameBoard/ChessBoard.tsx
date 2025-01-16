@@ -86,7 +86,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     if (gameId) {
       gameSocket.joinGame(gameId);
       
-      const unsubscribe = gameSocket.onGameUpdate((state) => {
+      const unsubscribe = gameSocket.onGameUpdate<ChessGameState>((state) => {
         const chessState: ChessGameState = {
           board: state.board || {},
           currentTurn: state.currentTurn as 'white' | 'black',

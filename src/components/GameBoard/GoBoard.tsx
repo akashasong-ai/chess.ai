@@ -34,18 +34,15 @@ export const GoBoard: React.FC<GoBoardProps> = ({
       gameSocket.joinGame(gameId);
       
       const unsubscribe = gameSocket.onGameUpdate<GoGameUpdate>((state) => {
-        if (state && typeof state === 'object') {
-          if (Array.isArray(state.board)) {
-            setBoard(state.board);
-          }
-          if ('lastMove' in state && state.lastMove) {
-            setLastMove(state.lastMove);
-          }
-          if ('gameOver' in state && state.gameOver) {
-            gameService.getLeaderboard('go').then(leaderboard => 
-              setLeaderboard(leaderboard)
-            );
-          }
+        if (Array.isArray(state.board)) {
+          setBoard(state.board);
+        }
+        if (state.lastMove) {
+          setLastMove(state.lastMove);
+        }
+        
+        if (state.gameOver) {
+          gameService.getLeaderboard('go').then(setLeaderboard);
         }
       });
 
@@ -148,4 +145,4 @@ export const GoBoard: React.FC<GoBoardProps> = ({
   );
 };
 
-export default GoBoard;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+export default GoBoard;
