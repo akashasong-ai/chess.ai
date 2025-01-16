@@ -1,7 +1,8 @@
 import React from 'react';
 import './styles.css';
+import { AI_PLAYERS } from '../../components/AISelector';
 
-const PlayerSelect = ({ aiOptions, onSelectPlayer1, onSelectPlayer2, gameType }) => {
+const PlayerSelect = ({ onSelectPlayer1, onSelectPlayer2, gameType }) => {
     return (
         <div className="player-select">
             <h2>Select Players for {gameType.toUpperCase()}</h2>
@@ -10,13 +11,14 @@ const PlayerSelect = ({ aiOptions, onSelectPlayer1, onSelectPlayer2, gameType })
                 <div className="player-column">
                     <h3>Player 1 ({gameType === 'chess' ? 'White' : 'Black'})</h3>
                     <div className="ai-options">
-                        {aiOptions.map(ai => (
+                        {AI_PLAYERS.map(ai => (
                             <button
                                 key={ai.id}
                                 className="ai-option"
                                 onClick={() => onSelectPlayer1(ai)}
                             >
-                                {ai.name}
+                                <div className="ai-name">{ai.name}</div>
+                                <div className="ai-description">{ai.description}</div>
                             </button>
                         ))}
                     </div>
@@ -25,13 +27,14 @@ const PlayerSelect = ({ aiOptions, onSelectPlayer1, onSelectPlayer2, gameType })
                 <div className="player-column">
                     <h3>Player 2 ({gameType === 'chess' ? 'Black' : 'White'})</h3>
                     <div className="ai-options">
-                        {aiOptions.map(ai => (
+                        {AI_PLAYERS.map(ai => (
                             <button
                                 key={ai.id}
                                 className="ai-option"
                                 onClick={() => onSelectPlayer2(ai)}
                             >
-                                {ai.name}
+                                <div className="ai-name">{ai.name}</div>
+                                <div className="ai-description">{ai.description}</div>
                             </button>
                         ))}
                     </div>

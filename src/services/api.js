@@ -2,14 +2,14 @@
 const API_BASE_URL = 'http://127.0.0.1:5001/api';
 
 class GameAPI {
-  async startGame(whitePlayer, blackPlayer) {
+  async startGame(whiteAI, blackAI) {
     try {
       const response = await fetch(`${API_BASE_URL}/game/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ whitePlayer, blackPlayer })
+        body: JSON.stringify({ whiteAI, blackAI })
       });
       return await response.json();
     } catch (error) {
@@ -108,4 +108,4 @@ class GameAPI {
   }
 }
 
-export const gameApi = new GameAPI(); 
+export const gameApi = new GameAPI();    

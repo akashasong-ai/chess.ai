@@ -192,7 +192,18 @@ def start_game():
         data = request.get_json()
         white_ai = data.get('whiteAI')
         black_ai = data.get('blackAI')
-        success = start_new_game(white_ai, black_ai)
+        
+        # Map player IDs to display names
+        ai_mapping = {
+            'gpt4': 'GPT-4',
+            'claude2': 'Claude 2',
+            'gemini': 'Gemini Pro',
+            'perplexity': 'Perplexity AI'
+        }
+        
+        white_name = ai_mapping.get(white_ai, white_ai)
+        black_name = ai_mapping.get(black_ai, black_ai)
+        success = start_new_game(white_name, black_name)
         return jsonify({'success': success})
     except Exception as e:
         logging.error(f"Error in start_game: {str(e)}")
@@ -416,4 +427,4 @@ def request_ai_move():
         return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True) 
+    app.run(port=5001, debug=True)   

@@ -23,16 +23,21 @@ const initialBoard = [
 ];
 
 // Add this at the top of your component
-const AI_PLAYERS = ['GPT-4', 'Claude 2', 'Gemini Pro'];
+export const AI_PLAYERS = [
+  { id: 'gpt4', name: 'GPT-4', description: 'OpenAI GPT-4' },
+  { id: 'claude2', name: 'Claude 2', description: 'Anthropic Claude 2' },
+  { id: 'gemini', name: 'Gemini Pro', description: 'Google Gemini Pro' },
+  { id: 'perplexity', name: 'Perplexity AI', description: 'Perplexity Llama-3.1' }
+];
 
 // Helper function to get random AI player
 const getRandomAI = (excludeAI = null) => {
   let availablePlayers = AI_PLAYERS;
   if (excludeAI) {
-    availablePlayers = AI_PLAYERS.filter(ai => ai !== excludeAI);
+    availablePlayers = AI_PLAYERS.filter(ai => ai.id !== excludeAI.id);
   }
   const randomIndex = Math.floor(Math.random() * availablePlayers.length);
-  return availablePlayers[randomIndex];
+  return availablePlayers[randomIndex].id;
 };
 
 // Update piece mapping with color styles
@@ -202,13 +207,13 @@ const ChessBoard = () => {
   // State declarations
   const [board, setBoard] = useState(initialBoard);
   const [selectedWhiteAI, setSelectedWhiteAI] = useState(() => {
-    const randomAI = getRandomAI();
+    const randomAI = AI_PLAYERS[Math.floor(Math.random() * AI_PLAYERS.length)];
     return randomAI;
   });
   const [selectedBlackAI, setSelectedBlackAI] = useState(() => {
     // Get a random AI that's different from white's AI
-    const randomAI = getRandomAI(selectedWhiteAI);
-    return randomAI;
+    const availableAIs = AI_PLAYERS.filter(ai => ai.id !== selectedWhiteAI.id);
+    return availableAIs[Math.floor(Math.random() * availableAIs.length)];
   });
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTournament, setIsTournament] = useState(false);
@@ -227,7 +232,7 @@ const ChessBoard = () => {
 
   // Game control functions
   const startGame = async () => {
-    if (selectedWhiteAI === selectedBlackAI) {
+    if (selectedWhiteAI.id === selectedBlackAI.id) {
       const errorMsg = 'An AI cannot play against itself';
       setError(errorMsg);
       setGameStatus(`Error: ${errorMsg}`);
@@ -239,12 +244,12 @@ const ChessBoard = () => {
       setCurrentPlayer('white');
       setGameStatus('Starting new game...');
       console.log('Starting new game...');
-      const response = await gameApi.startGame(selectedWhiteAI, selectedBlackAI);
+      const response = await gameApi.startGame(selectedWhiteAI.id, selectedBlackAI.id);
       if (response.success) {
         setIsPlaying(true);
         setBoard(initialBoard);
         setLastValidBoard(initialBoard);
-        setGameStatus(`Game started: ${selectedWhiteAI} vs ${selectedBlackAI}`);
+        setGameStatus(`Game started: ${selectedWhiteAI.name} vs ${selectedBlackAI.name}`);
         console.log('Game started successfully');
       } else {
         const errorMsg = response.error || 'Failed to start game';
@@ -721,4 +726,4 @@ const ChessBoard = () => {
   );
 };
 
-export default ChessBoard; 
+export default ChessBoard;               
