@@ -10,16 +10,16 @@ const PIECES = {
   'R': '♜', 'N': '♞', 'B': '♝', 'Q': '♛', 'K': '♚', 'P': '♟'
 };
 
-// Update the initial board state with solid white pieces
+// Initial board state with white pieces at the bottom (index 7,6)
 const initialBoard = [
-  ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'],  // Black pieces
+  ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'],  // Black pieces (will appear at top)
   ['♟', '♟', '♟', '♟', '♟', '♟', '♟', '♟'],  // Black pawns
   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
   ['♙', '♙', '♙', '♙', '♙', '♙', '♙', '♙'],  // White pawns
-  ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']   // White pieces (solid)
+  ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']   // White pieces (will appear at bottom)
 ];
 
 // Add this at the top of your component
@@ -700,7 +700,8 @@ const ChessBoard = () => {
       </div>
 
       <div className="chess-board">
-        {board.map((row, rowIndex) => (
+        {/* Reverse the board array to show white pieces at the bottom */}
+        {board.slice().reverse().map((row, rowIndex) => (
           <div key={rowIndex} className="board-row">
             {row.map((piece, colIndex) => (
               <div 
@@ -710,7 +711,7 @@ const ChessBoard = () => {
                 {piece !== ' ' && (
                   <div 
                     className="piece"
-                    style={getPieceStyle(piece, rowIndex)}
+                    style={getPieceStyle(piece, 7 - rowIndex)} // Adjust rowIndex for correct piece styling
                   >
                     {renderPiece(piece)}
                   </div>
@@ -726,4 +727,4 @@ const ChessBoard = () => {
   );
 };
 
-export default ChessBoard;         
+export default ChessBoard;                           
