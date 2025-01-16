@@ -359,51 +359,31 @@ const ChessBoard = ({ selectedWhiteAI, selectedBlackAI }) => {
 
     const resetGame = async () => {
       if (pollInterval) clearInterval(pollInterval);
-      
-      const initialBoard = [
-        ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
-        ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
-        [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-        [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-        [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-        [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-        ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
-        ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
-      ];
-      setBoard(initialBoard.map(row => row.map(piece => renderPiece(piece))));
+      setBoard(initialBoard);
+      setIsPlaying(false);
       
       try {
-        console.log('Game ended, updating leaderboards...');
-        
-        // Stop the current game
         await gameApi.stopGame();
-        
-        // Force a fresh leaderboard fetch
         const newLeaderboard = await gameApi.getLeaderboard();
-        console.log('New leaderboard data:', newLeaderboard);
-        
         if (Array.isArray(newLeaderboard)) {
-          console.log('Updating leaderboard state...');
           setLeaderboard(newLeaderboard);
-        } else {
-          console.error('Invalid leaderboard format:', newLeaderboard);
         }
-        
-        setIsPlaying(false);
       } catch (error) {
         console.error('Error in resetGame:', error);
       }
     };
 
     const pollGame = async () => {
-      if (isUpdating) return;
+      if (!isPlaying || isUpdating) return;
       isUpdating = true;
       
       try {
         const response = await gameApi.getGameState();
         
-        if (response?.gameState) {
-          if (response.gameState.status === 'finished') {
+        if (response?.board && Array.isArray(response.board)) {
+          setBoard(response.board.map(row => row.map(piece => renderPiece(piece))));
+          
+          if (response.gameState?.status === 'finished') {
             const finalMessage = response.gameState.winner ? 
               `🎉 Game Over - ${response.gameState.winner} wins! 🏆` :
               '🤝 Game Over - Draw! ⭐';
@@ -412,28 +392,24 @@ const ChessBoard = ({ selectedWhiteAI, selectedBlackAI }) => {
             return;
           }
 
-          const currentAI = response.gameState.currentPlayer === 'white' ? 
-            response.gameState.whiteAI : response.gameState.blackAI;
-          
-          let baseStatus = `${currentAI}'s turn (${response.gameState.currentPlayer})`;
-          if (response.lastMove) {
-            const previousAI = response.gameState.currentPlayer === 'white' ? 
-              response.gameState.blackAI : response.gameState.whiteAI;
-            baseStatus += ` | Last move by ${previousAI}: ${response.lastMove}`;
-          }
-
-          const randomMsg = THINKING_MESSAGES[Math.floor(Math.random() * THINKING_MESSAGES.length)];
-          setGameStatus(`${baseStatus} | ${randomMsg}`);
-
-          // Immediately request next move
-          const moveResponse = await gameApi.waitForAIMove();
-          if (moveResponse?.board && Array.isArray(moveResponse.board) && moveResponse.board.length === 8) {
-            setBoard(moveResponse.board.map(row => row.map(piece => renderPiece(piece))));
+          // Request next AI move if game is active
+          if (response.gameState?.status === 'active') {
+            const moveResponse = await gameApi.waitForAIMove();
+            if (moveResponse?.board) {
+              setBoard(moveResponse.board.map(row => row.map(piece => renderPiece(piece))));
+              
+              const currentAI = moveResponse.gameState.currentPlayer === 'white' ? 
+                moveResponse.gameState.whiteAI : moveResponse.gameState.blackAI;
+              const randomMsg = THINKING_MESSAGES[Math.floor(Math.random() * THINKING_MESSAGES.length)];
+              setGameStatus(`${currentAI}'s turn | ${randomMsg}`);
+            }
           }
         }
       } catch (error) {
-        console.error('Poll error:', error);
-        setGameStatus(`⚠️ Error: ${error.message}`);
+        if (!error.message?.includes('No active game')) {
+          console.error('Poll error:', error);
+          setGameStatus(`⚠️ Error: ${error.message}`);
+        }
       } finally {
         isUpdating = false;
       }
@@ -441,7 +417,7 @@ const ChessBoard = ({ selectedWhiteAI, selectedBlackAI }) => {
 
     if (isPlaying) {
       pollGame();
-      pollInterval = setInterval(pollGame, 50); // Reduced to 50ms for faster updates
+      pollInterval = setInterval(pollGame, 1000); // Poll every second
     }
 
     return () => {
@@ -699,4 +675,4 @@ const ChessBoard = ({ selectedWhiteAI, selectedBlackAI }) => {
   );
 };
 
-export default ChessBoard;                           
+export default ChessBoard;                              
