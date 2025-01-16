@@ -37,11 +37,14 @@ leaderboard = {
 def start_new_game(white_ai=None, black_ai=None):
     global board, game_state
     board = chess.Board()
+    # Ensure white always moves first and prevent any race conditions
     game_state = {
         'status': 'active',
-        'currentPlayer': 'white',
+        'currentPlayer': 'white',  # White always moves first in chess
         'whiteAI': white_ai,
-        'blackAI': black_ai
+        'blackAI': black_ai,
+        'moveCount': 0,  # Track number of moves to ensure proper turn order
+        'lastMoveTime': time.time()  # Add timestamp to prevent rapid move sequences
     }
     return True
 
@@ -367,7 +370,16 @@ def request_ai_move():
         if board is None or game_state is None:
             return jsonify({'error': 'No active game'}), 400
 
+        # Ensure proper turn order
         current_player = game_state['currentPlayer']
+        if current_player != 'white' and game_state['moveCount'] == 0:
+            return jsonify({'error': 'White must move first'}), 400
+
+        # Prevent rapid move sequences
+        current_time = time.time()
+        if current_time - game_state['lastMoveTime'] < 0.1:  # Minimum 100ms between moves
+            return jsonify({'error': 'Move too fast'}), 429
+
         current_ai = game_state['whiteAI'] if current_player == 'white' else game_state['blackAI']
         
         # Get AI move using the existing get_next_ai_move function
@@ -378,6 +390,8 @@ def request_ai_move():
             
         # Make the move
         board.push(ai_move)
+        game_state['moveCount'] += 1
+        game_state['lastMoveTime'] = current_time
         game_state['currentPlayer'] = 'black' if current_player == 'white' else 'white'
         
         # Convert board to 2D array with proper piece case preservation
@@ -416,4 +430,4 @@ def request_ai_move():
         return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True) 
+    app.run(port=5001, debug=True)      

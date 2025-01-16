@@ -422,10 +422,13 @@ const ChessBoard = () => {
           const randomMsg = THINKING_MESSAGES[Math.floor(Math.random() * THINKING_MESSAGES.length)];
           setGameStatus(`${baseStatus} | ${randomMsg}`);
 
-          // Immediately request next move
-          const moveResponse = await gameApi.waitForAIMove();
-          if (moveResponse?.board && Array.isArray(moveResponse.board) && moveResponse.board.length === 8) {
-            setBoard(moveResponse.board.map(row => row.map(piece => renderPiece(piece))));
+          // Only request AI move if it's actually the AI's turn
+          if (response.gameState.currentPlayer === 'white' && selectedWhiteAI || 
+              response.gameState.currentPlayer === 'black' && selectedBlackAI) {
+            const moveResponse = await gameApi.waitForAIMove();
+            if (moveResponse?.board && Array.isArray(moveResponse.board) && moveResponse.board.length === 8) {
+              setBoard(moveResponse.board.map(row => row.map(piece => renderPiece(piece))));
+            }
           }
         }
       } catch (error) {
@@ -721,4 +724,4 @@ const ChessBoard = () => {
   );
 };
 
-export default ChessBoard; 
+export default ChessBoard;   
