@@ -1,4 +1,3 @@
-import React from 'react';
 import './styles.css';
 
 const PlayerSelect = ({ aiOptions, onSelectPlayer1, onSelectPlayer2, gameType }) => {

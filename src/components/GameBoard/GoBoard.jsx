@@ -1,4 +1,3 @@
-import React from 'react';
 
 const GoBoard = ({ player1, player2 }) => {
   // Add go board implementation
@@ -9,4 +8,4 @@ const GoBoard = ({ player1, player2 }) => {
   );
 };
 
-export default GoBoard; 
+export default GoBoard;    

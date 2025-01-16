@@ -1,4 +1,3 @@
-import React from 'react';
 import './AISelector.css';
 
 const AISelector = ({ position, selectedAI, onSelect }) => {
@@ -33,4 +32,4 @@ const AISelector = ({ position, selectedAI, onSelect }) => {
   );
 };
 
-export default AISelector; 
+export default AISelector;    

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { gameApi } from '../services/api';
 import './ChessBoard.css';
 
@@ -721,4 +721,4 @@ const ChessBoard = () => {
   );
 };
 
-export default ChessBoard; 
+export default ChessBoard;   

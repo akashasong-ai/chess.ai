@@ -1,4 +1,3 @@
-import React from 'react';
 
 const ChessBoard = ({ player1, player2 }) => {
   // Add chess board implementation
@@ -9,4 +8,4 @@ const ChessBoard = ({ player1, player2 }) => {
   );
 };
 
-export default ChessBoard; 
+export default ChessBoard;    

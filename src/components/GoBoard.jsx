@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { gameApi } from '../services/api';
 import './GoBoard.css';
 
@@ -84,4 +84,4 @@ const GoBoard = () => {
   );
 };
 
-export default GoBoard; 
+export default GoBoard;   
