@@ -1,15 +1,18 @@
 import io from 'socket.io-client';
 import type { ChessGameState } from '../types/chess';
+import type { GoGameState } from '../types/go';
 import type { LeaderboardEntry } from '../types/leaderboard';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
 
+type GameState = ChessGameState | GoGameState;
+
 interface SocketEvents {
   // Server -> Client events
-  gameUpdate: (state: ChessGameState) => void;
+  gameUpdate: (state: GameState) => void;
   leaderboardUpdate: (data: LeaderboardEntry[]) => void;
   // Client -> Server events
-  move: (data: { from: string; to: string; gameId: string }) => void;
+  move: (data: { from?: string; to?: string; x?: number; y?: number; gameId: string }) => void;
   joinGame: (gameId: string) => void;
   leaveGame: () => void;
   getLeaderboard: () => void;
@@ -23,7 +26,10 @@ class GameSocket {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      reconnectionDelay: 1000,
+      auth: {
+        credentials: 'include'
+      }
     });
   }
 
@@ -50,4 +56,4 @@ class GameSocket {
   }
 }
 
-export const gameSocket = new GameSocket();         
+export const gameSocket = new GameSocket();                        

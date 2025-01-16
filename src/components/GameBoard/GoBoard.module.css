@@ -1,0 +1,122 @@
+.goBoardContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+}
+
+.playerSelection {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 20px;
+}
+
+.playerColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.playerColumn select {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  min-width: 200px;
+}
+
+.gameControls {
+  margin-bottom: 20px;
+}
+
+.gameControls button {
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 4px;
+  border: none;
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+}
+
+.gameControls button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.goBoard {
+  display: grid;
+  grid-template-rows: repeat(19, 30px);
+  background-color: #DEB887;
+  padding: 20px;
+  border: 2px solid #8B4513;
+  border-radius: 4px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(19, 30px);
+}
+
+.intersection {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.intersection::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background-color: #000;
+  z-index: 1;
+}
+
+.intersection::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 100%;
+  background-color: #000;
+  z-index: 1;
+}
+
+.starPoint::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #000;
+  z-index: 2;
+}
+
+.stone {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  z-index: 3;
+  transition: all 0.2s ease;
+}
+
+.black {
+  background-color: #000;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.white {
+  background-color: #fff;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.lastMove {
+  box-shadow: 0 0 10px #ff0000;
+}
