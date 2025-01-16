@@ -9,4 +9,4 @@ python-chess==1.999
 openai==1.12.0
 anthropic==0.18.0
 google-generativeai==0.3.2
-katago==1.0.0
+simple-websocket==1.0.0

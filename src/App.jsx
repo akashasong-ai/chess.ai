@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import ChessBoard from './components/ChessBoard';
+import { ChessBoard } from './components/GameBoard/ChessBoard';
 import Leaderboard from './components/Leaderboard';
 import './App.css';
+import { AI_PLAYERS } from './config/ai';
 
 function App() {
   const [leaderboard, setLeaderboard] = useState([]);

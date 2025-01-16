@@ -1,12 +1,8 @@
+import PropTypes from 'prop-types';
 import './AISelector.css';
+import { AI_PLAYERS } from '../config/ai';
 
 const AISelector = ({ position, selectedAI, onSelect }) => {
-  const llmOptions = [
-    { id: 'gpt4', name: 'GPT-4', description: 'OpenAI GPT-4' },
-    { id: 'gpt35', name: 'GPT-3.5', description: 'OpenAI GPT-3.5 Turbo' },
-    { id: 'claude2', name: 'Claude 2', description: 'Anthropic Claude 2' },
-    { id: 'gemini', name: 'Gemini Pro', description: 'Google Gemini Pro' }
-  ];
 
   return (
     <div className="ai-selector">
@@ -17,7 +13,7 @@ const AISelector = ({ position, selectedAI, onSelect }) => {
         className="llm-select"
       >
         <option value="">Select an AI Model</option>
-        {llmOptions.map((llm) => (
+        {AI_PLAYERS.map((llm) => (
           <option key={llm.id} value={llm.id}>
             {llm.name}
           </option>
@@ -25,11 +21,17 @@ const AISelector = ({ position, selectedAI, onSelect }) => {
       </select>
       {selectedAI && (
         <div className="llm-description">
-          {llmOptions.find(llm => llm.id === selectedAI)?.description}
+          {AI_PLAYERS.find(llm => llm.id === selectedAI)?.description}
         </div>
       )}
     </div>
   );
 };
 
-export default AISelector;    
+AISelector.propTypes = {
+  position: PropTypes.string.isRequired,
+  selectedAI: PropTypes.string,
+  onSelect: PropTypes.func.isRequired
+};
+
+export default AISelector;        

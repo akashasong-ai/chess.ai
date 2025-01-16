@@ -2,7 +2,7 @@ import io from 'socket.io-client';
 import type { ChessGameState } from '../types/chess';
 import type { LeaderboardEntry } from '../types/leaderboard';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
 
 interface SocketEvents {
   // Server -> Client events
@@ -20,7 +20,10 @@ class GameSocket {
 
   constructor() {
     this.socket = io(SOCKET_URL, {
-      transports: ['websocket']
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
     });
   }
 
@@ -47,4 +50,4 @@ class GameSocket {
   }
 }
 
-export const gameSocket = new GameSocket(); 
+export const gameSocket = new GameSocket();         
