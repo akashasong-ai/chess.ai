@@ -15,15 +15,19 @@ load_dotenv()
 OPENAI_KEY = os.getenv('OPENAI_API_KEY')
 ANTHROPIC_KEY = os.getenv('ANTHROPIC_API_KEY')
 GOOGLE_KEY = os.getenv('GOOGLE_API_KEY')
+PERPLEXITY_KEY = os.getenv('PERPLEXITY_API_KEY')
 
+# Check required API keys
 if not all([OPENAI_KEY, ANTHROPIC_KEY, GOOGLE_KEY]):
     raise ValueError("Missing required API keys in .env file")
 
 # Add this after the API key checks
 print("API Keys loaded successfully:")
-print(f"OpenAI: {OPENAI_KEY[:8]}...")  # Only print first 8 chars
-print(f"Anthropic: {ANTHROPIC_KEY[:8]}...")
-print(f"Google: {GOOGLE_KEY[:8]}...")
+print(f"OpenAI: {OPENAI_KEY[:8] if OPENAI_KEY else 'Not found'}...")
+print(f"Anthropic: {ANTHROPIC_KEY[:8] if ANTHROPIC_KEY else 'Not found'}...")
+print(f"Google: {GOOGLE_KEY[:8] if GOOGLE_KEY else 'Not found'}...")
+if PERPLEXITY_KEY:
+    print(f"Perplexity: {PERPLEXITY_KEY[:8]}...")
 
 app = Flask(__name__)
 CORS(app)

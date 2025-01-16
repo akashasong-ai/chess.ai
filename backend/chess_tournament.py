@@ -157,6 +157,36 @@ class ChessTournament:
                 )
                 move = response.content[0].text.strip().lower()
                 
+            elif player == "Perplexity":
+                import requests
+
+                if not os.getenv('PERPLEXITY_API_KEY'):
+                    print("Perplexity API key not found, using Stockfish fallback")
+                    result = self.engine.play(board, chess.engine.Limit(time=0.1))
+                    return result.move.uci()
+
+                api_key = os.getenv('PERPLEXITY_API_KEY')
+                headers = {
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json"
+                }
+                data = {
+                    "model": "llama-3.1-sonar-small-128k-online",
+                    "messages": [{
+                        "role": "system",
+                        "content": prompt
+                    }],
+                    "max_tokens": 10,
+                    "temperature": 0.1  # Consistent with other LLMs
+                }
+                response = requests.post(
+                    "https://api.perplexity.ai/chat/completions",
+                    headers=headers,
+                    json=data
+                )
+                result_json = response.json()
+                move = result_json["choices"][0]["message"]["content"].strip().lower()
+                
             else:  # Gemini
                 model = generativeai.GenerativeModel('gemini-pro')
                 response = await model.generate_content(prompt)
@@ -190,4 +220,4 @@ class ChessTournament:
 
 if __name__ == '__main__':
     tournament = ChessTournament()
-    asyncio.run(tournament.run_tournament()) 
+    asyncio.run(tournament.run_tournament())      

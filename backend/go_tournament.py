@@ -108,6 +108,43 @@ class GoTournament:
                 )
                 move = response.content[0].text.strip().upper()
                 
+            elif player == "Perplexity":
+                import requests
+
+                if not os.getenv('PERPLEXITY_API_KEY'):
+                    print("Perplexity API key not found, using random move")
+                    return random.choice(valid_moves)
+
+                api_key = os.getenv('PERPLEXITY_API_KEY')
+                headers = {
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json"
+                }
+                data = {
+                    "model": "llama-3.1-sonar-small-128k-online",
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": (
+                                "You are playing Go. Be strategic and avoid invalid moves."
+                            )
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    "max_tokens": 2,
+                    "temperature": 0.1  # Consistent with other LLMs
+                }
+                response = requests.post(
+                    "https://api.perplexity.ai/chat/completions",
+                    headers=headers,
+                    json=data
+                )
+                result_json = response.json()
+                move = result_json["choices"][0]["message"]["content"].strip().upper()
+                
             else:  # Gemini
                 model = generativeai.GenerativeModel('gemini-pro')
                 chat = model.start_chat(temperature=0.1)  # Low temperature for consistent, focused moves

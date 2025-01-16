@@ -6,7 +6,8 @@ const AISelector = ({ position, selectedAI, onSelect }) => {
     { id: 'gpt4', name: 'GPT-4', description: 'OpenAI GPT-4' },
     { id: 'gpt35', name: 'GPT-3.5', description: 'OpenAI GPT-3.5 Turbo' },
     { id: 'claude2', name: 'Claude 2', description: 'Anthropic Claude 2' },
-    { id: 'gemini', name: 'Gemini Pro', description: 'Google Gemini Pro' }
+    { id: 'gemini', name: 'Gemini Pro', description: 'Google Gemini Pro' },
+    { id: 'perplexity', name: 'Perplexity AI', description: 'Perplexity Llama-3.1' }
   ];
 
   return (
@@ -33,4 +34,4 @@ const AISelector = ({ position, selectedAI, onSelect }) => {
   );
 };
 
-export default AISelector; 
+export default AISelector;   
