@@ -1,10 +1,94 @@
-import { Box, Grid, GridItem, Text, VStack, HStack, Button } from '@chakra-ui/react'
+import { Box, Grid, GridItem, Text, VStack, HStack, Button, useToast } from '@chakra-ui/react'
 import { useState, useEffect } from 'react'
 import { Chess } from 'chess.js'
+import { api } from '../services/api'
 
 function ChessBoard({ mode }) {
   const [game, setGame] = useState(new Chess())
   const [selectedSquare, setSelectedSquare] = useState(null)
+  const [gameState, setGameState] = useState(null)
+  const [isPlayerTurn, setIsPlayerTurn] = useState(true)
+  const toast = useToast()
+
+  useEffect(() => {
+    const initGame = async () => {
+      try {
+        let whiteAI = null
+        let blackAI = null
+        
+        if (mode === 'ai-vs-ai') {
+          whiteAI = 'GPT-4'
+          blackAI = 'CLAUDE'
+        } else if (mode === 'player-vs-ai') {
+          blackAI = 'GPT-4'
+        }
+        
+        await api.startGame(whiteAI, blackAI)
+        const state = await api.getGameState()
+        setGameState(state)
+        setGame(new Chess(state.gameState.fen))
+        setIsPlayerTurn(state.gameState.currentPlayer === 'white' && !whiteAI)
+      } catch (error) {
+        toast({
+          title: 'Error starting game',
+          description: error.message,
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        })
+      }
+    }
+
+    initGame()
+    setupWebSocket()
+
+    return () => {
+      api.cleanup()
+    }
+  }, [mode])
+
+  useEffect(() => {
+    const handleAIMove = async () => {
+      if (gameState && !isPlayerTurn && !game.isGameOver()) {
+        try {
+          const result = await api.requestAIMove()
+          if (result.success) {
+            setGame(new Chess(result.gameState.fen))
+            setGameState(result)
+            setIsPlayerTurn(!result.gameState.whiteAI || 
+              (result.gameState.currentPlayer === 'white' && !result.gameState.whiteAI) ||
+              (result.gameState.currentPlayer === 'black' && !result.gameState.blackAI))
+          }
+        } catch (error) {
+          toast({
+            title: 'Error making AI move',
+            description: error.message,
+            status: 'error',
+            duration: 3000,
+            isClosable: true,
+          })
+        }
+      }
+    }
+
+    handleAIMove()
+  }, [gameState, isPlayerTurn])
+
+  const setupWebSocket = () => {
+    api.onConnect(() => {
+      console.log('Connected to game server')
+    })
+
+    api.onGameUpdate((update) => {
+      setGame(new Chess(update.fen))
+      setGameState(update)
+      setIsPlayerTurn(update.currentPlayer === 'white' && !update.whiteAI)
+    })
+
+    api.onDisconnect(() => {
+      console.log('Disconnected from game server')
+    })
+  }
   
   const renderSquare = (i, j) => {
     const isLight = (i + j) % 2 === 0
@@ -43,7 +127,9 @@ function ChessBoard({ mode }) {
     return symbols[piece.type]
   }
 
-  const handleSquareClick = (square) => {
+  const handleSquareClick = async (square) => {
+    if (!isPlayerTurn) return
+
     if (selectedSquare === null) {
       // First click - select the piece
       const piece = game.get(square)
@@ -53,15 +139,32 @@ function ChessBoard({ mode }) {
     } else {
       // Second click - attempt to move
       try {
-        game.move({
+        const move = {
           from: selectedSquare,
           to: square,
           promotion: 'q' // Always promote to queen for simplicity
-        })
-        setGame(new Chess(game.fen()))
+        }
+
+        // Validate move locally first
+        const newGame = new Chess(game.fen())
+        newGame.move(move)
+
+        // If local validation passes, send to server
+        const result = await api.makeMove(move.from + move.to)
+        if (result.success) {
+          setGame(new Chess(result.gameState.fen))
+          setGameState(result)
+          setIsPlayerTurn(false)
+        }
         setSelectedSquare(null)
       } catch (e) {
-        // Invalid move
+        toast({
+          title: 'Invalid move',
+          description: e.message,
+          status: 'warning',
+          duration: 2000,
+          isClosable: true,
+        })
         setSelectedSquare(null)
       }
     }
