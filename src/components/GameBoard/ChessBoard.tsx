@@ -63,13 +63,13 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
         initialBoard[position] = { type, color, position };
       }
       else {
-        initialBoard[position] = null;
+        initialBoard[position] = null as unknown as ChessPiece;
       }
     });
   });
 
   const [gameState, setGameState] = useState<ChessGameState>({
-    board: initialBoard,
+    board: initialBoard as Record<string, ChessPiece>,
     currentTurn: 'white',
     moves: [],
     isCheck: false,
@@ -234,4 +234,4 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       </div>
     </div>
   );
-};                           
+};                              
