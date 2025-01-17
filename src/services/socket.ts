@@ -22,26 +22,35 @@ class GameSocket {
   socket: ReturnType<typeof io>;
 
   constructor() {
-    const wsUrl = SOCKET_URL.replace('https://', 'wss://');
+    console.log('Initializing socket connection to:', SOCKET_URL);
+    const wsUrl = SOCKET_URL.replace(/^http/, 'ws');
+    console.log('WebSocket URL:', wsUrl);
+    
     this.socket = io(wsUrl, {
       transports: ['websocket'],
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 10000
+      reconnectionAttempts: 3,
+      reconnectionDelay: 2000,
+      timeout: 20000,
+      path: '/socket.io'
     });
 
-    // Add connection event handlers
+    // Add connection event handlers with detailed logging
     this.socket.on('connect', () => {
-      console.log('Connected to game server');
+      console.log('Successfully connected to game server');
+      console.log('Socket ID:', this.socket.id);
     });
 
     this.socket.on('connect_error', (error: Error) => {
-      console.error('Connection error:', error);
+      console.error('Socket connection error:', error.message);
+      console.error('Connection status:', {
+        id: this.socket.id,
+        connected: this.socket.connected
+      });
     });
 
     this.socket.on('disconnect', (reason: string) => {
-      console.log('Disconnected:', reason);
+      console.log('Socket disconnected. Reason:', reason);
     });
   }
 
