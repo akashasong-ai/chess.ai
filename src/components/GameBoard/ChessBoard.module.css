@@ -71,8 +71,9 @@
 .chessBoard {
   display: flex;
   flex-direction: column;
-  width: 560px;
-  height: 560px;
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 1 / 1;
   border: 2px solid #1a1a1a;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
@@ -88,11 +89,11 @@
   cursor: pointer;
 }
 
-.square:nth-child(odd) {
+.lightSquare {
   background-color: #e6e6d8;  /* cream colored squares */
 }
 
-.square:nth-child(even) {
+.darkSquare {
   background-color: #7fa650;  /* olive green squares */
 }
 
@@ -134,4 +135,46 @@
 .black.knight { background-image: url('/pieces/black-knight.svg'); }
 .black.bishop { background-image: url('/pieces/black-bishop.svg'); }
 .black.queen { background-image: url('/pieces/black-queen.svg'); }
-.black.king { background-image: url('/pieces/black-king.svg'); }                                                                                                            
+.black.king { background-image: url('/pieces/black-king.svg'); }
+
+@media (max-width: 768px) {
+  .chessBoardContainer {
+    padding: 10px;
+  }
+
+  .playerSelection {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .playerColumn {
+    width: 100%;
+  }
+
+  .playerColumn select {
+    max-width: 100%;
+  }
+
+  .chessBoard {
+    max-width: 90vw;
+  }
+}
+
+@media (max-width: 480px) {
+  .chessBoardContainer {
+    padding: 5px;
+  }
+
+  .playerColumn h3 {
+    font-size: 14px;
+  }
+
+  .gameControls button {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  .chessBoard {
+    max-width: 95vw;
+  }
+}                  

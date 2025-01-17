@@ -1,0 +1,54 @@
+.gameTypeSelect {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.gameOptions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.gameOption {
+  padding: 8px 16px;
+  border-radius: 4px;
+  background-color: #333;
+  color: #f2f2f2;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 14px;
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #444;
+}
+
+.gameOption:hover {
+  background-color: #444;
+}
+
+.gameOption.active {
+  background-color: #7fa650;
+  border-color: #8fb660;
+}
+
+.gameIcon {
+  font-size: 18px;
+}
+
+@media (max-width: 768px) {
+  .gameOption {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-width: 80px;
+  }
+  
+  .gameIcon {
+    font-size: 16px;
+  }
+}

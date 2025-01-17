@@ -170,7 +170,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     }
   };
 
-  const renderSquare = (position: string) => {
+  const renderSquare = (position: string, isLight: boolean) => {
     const piece = gameState?.board[position];
     const isSelected = position === selectedSquare;
     const isValidMove = possibleMoves.includes(position);
@@ -178,7 +178,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     return (
       <div 
         key={position}
-        className={`${styles.square} ${isSelected ? styles.selected : ''} ${isValidMove ? styles.validMove : ''}`}
+        className={`${styles.square} ${isLight ? styles.lightSquare : styles.darkSquare} ${isSelected ? styles.selected : ''} ${isValidMove ? styles.validMove : ''}`}
         onClick={() => handleSquareClick(position)}
       >
         {piece && (
@@ -194,7 +194,10 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     
     return ranks.map(rank => (
       <div key={rank} className={styles.rank}>
-        {files.map(file => renderSquare(`${file}${rank}`))}
+        {files.map((file, fileIndex) => {
+          const rankIndex = ranks.indexOf(rank);
+          return renderSquare(`${file}${rank}`, (rankIndex + fileIndex) % 2 === 0);
+        })}
       </div>
     ));
   };
@@ -234,4 +237,4 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       </div>
     </div>
   );
-};                                                                                                                        
+};                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
