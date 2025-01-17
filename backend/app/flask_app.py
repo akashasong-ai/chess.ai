@@ -195,11 +195,12 @@ tournament_state = {
     'participants': []
 }
 
-# Add global leaderboard variable
+# Add global leaderboard variable with test data
 leaderboard = {
-    'GPT-4': {'wins': 0, 'losses': 0},
-    'CLAUDE': {'wins': 0, 'losses': 0},
-    'GEMINI': {'wins': 0, 'losses': 0}
+    'GPT-4': {'wins': 5, 'losses': 2, 'draws': 1},
+    'Claude 2': {'wins': 4, 'losses': 3, 'draws': 1},
+    'Gemini Pro': {'wins': 3, 'losses': 4, 'draws': 0},
+    'Perplexity': {'wins': 2, 'losses': 5, 'draws': 2}
 }
 
 def start_new_game(white_ai=None, black_ai=None):
@@ -510,18 +511,17 @@ def get_leaderboard():
         return '', 200
         
     try:
-        return jsonify({
-            'success': True,
-            'leaderboard': [
-                {
-                    'name': player,
-                    'wins': stats['wins'],
-                    'losses': stats['losses'],
-                    'winRate': round(stats['wins'] / (stats['wins'] + stats['losses']) * 100, 1) if (stats['wins'] + stats['losses']) > 0 else 0
-                }
-                for player, stats in leaderboard.items()
-            ]
-        })
+        return jsonify([
+            {
+                'player': player,
+                'score': stats['wins'] * 2 + (stats.get('draws', 0)),  # 2 points for win, 1 for draw
+                'wins': stats['wins'],
+                'losses': stats['losses'],
+                'draws': stats.get('draws', 0),
+                'winRate': round(stats['wins'] / (stats['wins'] + stats['losses'] + stats.get('draws', 0)) * 100, 1) if (stats['wins'] + stats['losses'] + stats.get('draws', 0)) > 0 else 0
+            }
+            for player, stats in leaderboard.items()
+        ])
     except Exception as e:
         logging.error(f"Error in get_leaderboard: {str(e)}")
         return jsonify({'error': str(e)}), 400
