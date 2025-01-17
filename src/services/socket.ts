@@ -22,15 +22,18 @@ class GameSocket {
   socket: ReturnType<typeof io>;
 
   constructor() {
-    const wsUrl = SOCKET_URL.replace('https://', 'wss://');
-    this.socket = io(wsUrl, {
-      transports: ['websocket', 'polling'],
+    console.log('Initializing socket connection to:', SOCKET_URL);
+    this.socket = io(SOCKET_URL, {
+      transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      path: '/socket.io/',
       auth: {
-        credentials: 'include'
-      }
+        credentials: 'omit'
+      },
+      autoConnect: true,
+      timeout: 20000
     });
 
     // Add connection event handlers
