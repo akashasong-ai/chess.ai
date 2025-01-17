@@ -24,13 +24,11 @@ class GameSocket {
   constructor() {
     const wsUrl = SOCKET_URL.replace('https://', 'wss://');
     this.socket = io(wsUrl, {
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'],
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
-      auth: {
-        credentials: 'include'
-      }
+      timeout: 10000
     });
 
     // Add connection event handlers
