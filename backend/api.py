@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from flask_socketio import SocketIO, emit
 from dotenv import load_dotenv
 import os
 from chess_engine import ChessGame
@@ -38,17 +37,7 @@ CORS(app,
     },
     supports_credentials=True
 )
-socketio = SocketIO(app, 
-    cors_allowed_origins=["http://localhost:5173"],
-    async_mode='threading',
-    logger=True,
-    engineio_logger=True,
-    ping_timeout=60000,
-    ping_interval=25000,
-    allow_credentials=True,
-    transports=['websocket', 'polling'],
-    cors_credentials=True
-)
+# Socket.IO implementation moved to flask_app.py
 
 # Initialize game storage
 chess_games = {}
@@ -130,39 +119,11 @@ def get_leaderboard(game_type):
     else:
         return jsonify(go_leaderboard.get_rankings())
 
-# Socket.IO event handlers
-@socketio.on('connect')
-def handle_connect():
-    print('Client connected')
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    print('Client disconnected')
-
-@socketio.on('joinGame')
-def handle_join_game(game_id):
-    print(f'Client joined game {game_id}')
-
-@socketio.on('leaveGame')
-def handle_leave_game():
-    print('Client left game')
-
-@socketio.on('move')
-def handle_move(data):
-    game_id = data.get('gameId')
-    move = data.get('move')
-    if game_id in chess_games:
-        game = chess_games[game_id]
-        result = game.make_move(move['from'], move['to'])
-        if result['valid']:
-            emit('gameUpdate', game.get_status(), broadcast=True)
+# Socket.IO event handlers moved to flask_app.py
 
 if __name__ == '__main__':
-    socketio.run(app, 
+    app.run(
         host='127.0.0.1',
-        port=5001, 
-        debug=True,
-        use_reloader=True,
-        log_output=True,
-        allow_unsafe_werkzeug=True  # Required for development server
+        port=5001,
+        debug=True
     )

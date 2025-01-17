@@ -47,15 +47,46 @@
   margin-bottom: 20px;
 }
 
+.gameControls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 10px 0;
+}
+
 .gameControls button {
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-radius: 4px;
   border: none;
-  background-color: #7fa650;
   color: #f2f2f2;
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  min-width: 100px;
+}
+
+.startButton {
+  background-color: #7fa650;
+}
+
+.startButton:hover:not(:disabled) {
+  background-color: #8fb660;
+}
+
+.stopButton {
+  background-color: #d32f2f;
+}
+
+.stopButton:hover:not(:disabled) {
+  background-color: #e33e3e;
+}
+
+.newButton {
+  background-color: #1976d2;
+}
+
+.newButton:hover:not(:disabled) {
+  background-color: #1e88e5;
 }
 
 .gameControls button:disabled {
@@ -64,18 +95,16 @@
   cursor: not-allowed;
 }
 
-.gameControls button:hover:not(:disabled) {
-  background-color: #8fb660;
-}
-
 .chessBoard {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 560px;
+  max-width: min(560px, 95vmin);
   aspect-ratio: 1 / 1;
   border: 2px solid #1a1a1a;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .rank {
@@ -153,10 +182,21 @@
 
   .playerColumn select {
     max-width: 100%;
+    height: 44px; /* Minimum touch target size */
   }
 
-  .chessBoard {
-    max-width: 90vw;
+  .gameControls {
+    flex-wrap: wrap;
+  }
+
+  .gameControls button {
+    flex: 1;
+    min-width: 120px;
+    height: 44px; /* Minimum touch target size */
+  }
+
+  .piece {
+    transform: scale(0.9); /* Slightly smaller pieces on mobile */
   }
 }
 
@@ -172,9 +212,16 @@
   .gameControls button {
     padding: 8px 12px;
     font-size: 14px;
+    min-width: 100px;
   }
 
-  .chessBoard {
-    max-width: 95vw;
+  .piece {
+    transform: scale(0.85); /* Even smaller pieces on very small screens */
   }
-}                  
+}
+
+/* Prevent text selection during touch interactions */
+.square, .piece {
+  user-select: none;
+  -webkit-user-select: none;
+}                                                                        

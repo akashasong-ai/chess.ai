@@ -122,6 +122,21 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     }
   };
 
+  const handleNewGame = () => {
+    setSelectedWhiteAI('');
+    setSelectedBlackAI('');
+    setGameState({
+      board: initialBoard,
+      currentTurn: 'white',
+      moves: [],
+      isCheck: false,
+      isCheckmate: false,
+      isStalemate: false
+    });
+    setIsPlaying(false);
+    window.history.pushState({}, '', '/');
+  };
+
   const handleStopGame = async () => {
     try {
       setIsPlaying(false);
@@ -226,10 +241,24 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       </div>
       <div className={styles.gameControls}>
         <button 
-          onClick={isPlaying ? handleStopGame : handleStartGame}
-          disabled={!selectedWhiteAI || !selectedBlackAI}
+          onClick={handleStartGame}
+          disabled={!selectedWhiteAI || !selectedBlackAI || isPlaying}
+          className={styles.startButton}
         >
-          {isPlaying ? 'Stop Game' : 'Start Game'}
+          Start Game
+        </button>
+        <button 
+          onClick={handleStopGame}
+          disabled={!isPlaying}
+          className={styles.stopButton}
+        >
+          Stop Game
+        </button>
+        <button 
+          onClick={handleNewGame}
+          className={styles.newButton}
+        >
+          New Game
         </button>
       </div>
       <div className={styles.chessBoard}>
@@ -237,4 +266,4 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       </div>
     </div>
   );
-};                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+};                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
