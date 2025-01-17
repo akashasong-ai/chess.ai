@@ -120,8 +120,8 @@
   max-width: min(560px, 95vmin);
   aspect-ratio: 1 / 1;
   background-color: #DEB887;
-  border: 2px solid #8B4513;
-  border-radius: 4px;
+  border: 1px solid #8B4513;
+  border-radius: 2px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   gap: 0;
   padding: 0;
@@ -173,11 +173,14 @@
 .starPoint::before {
   content: '';
   position: absolute;
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background-color: #000;
   z-index: 2;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .stone {
