@@ -112,19 +112,20 @@
 }
 
 .goBoard {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: min(560px, 95vmin);
   aspect-ratio: 1 / 1;
-  grid-template-rows: repeat(19, 1fr);
   background-color: #DEB887;
   border: 2px solid #8B4513;
   border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .row {
-  display: grid;
-  grid-template-columns: repeat(19, 1fr);
+  display: flex;
+  flex: 1;
 }
 
 .intersection {
