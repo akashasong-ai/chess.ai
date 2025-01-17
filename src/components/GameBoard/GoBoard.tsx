@@ -59,6 +59,7 @@ export const GoBoard: React.FC<GoBoardProps> = ({
       setIsPlaying(true);
       const newGameId = await gameService.startGame('go', selectedWhiteAI, selectedBlackAI);
       window.history.pushState({}, '', `/game/${newGameId}`);
+      gameSocket.joinGame(newGameId);
     } catch (error) {
       console.error('Failed to start game:', error);
       setIsPlaying(false);
