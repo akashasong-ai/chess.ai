@@ -4,6 +4,7 @@ from flask_socketio import SocketIO, emit
 import chess
 import random
 import logging
+import os
 from itertools import combinations
 import time
 import os
@@ -25,7 +26,7 @@ game_state: Dict[str, Any] = {
     'winner': None
 }
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../frontend/dist', static_url_path='/')
 CORS(app, resources={
     r"/*": {
         "origins": "*",
@@ -184,6 +185,18 @@ def handle_move(data):
     except Exception as e:
         logger.error(f"Error in handle_move: {str(e)}")
         emit('error', {'message': 'Internal server error'})
+
+# Serve static files
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_static(path):
+    try:
+        if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+            return app.send_static_file(path)
+        return app.send_static_file('index.html')
+    except Exception as e:
+        logging.error(f"Error serving static file: {str(e)}")
+        return app.send_static_file('index.html')
 
 # Global variables
 board = chess.Board()  # Initialize chess board

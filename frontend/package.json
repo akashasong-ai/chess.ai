@@ -10,14 +10,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@chakra-ui/react": "^3.3.0",
+    "@chakra-ui/color-mode": "^2.2.0",
+    "@chakra-ui/react": "^2.10.4",
+    "@chakra-ui/system": "^2.6.2",
+    "@chakra-ui/theme": "^2.3.0",
+    "@chakra-ui/toast": "^7.0.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "axios": "^1.7.9",
-    "chess.js": "^1.0.0-beta.8",
-    "framer-motion": "^11.16.7",
+    "chess.js": "^1.0.0",
+    "framer-motion": "^11.18.0",
+    "prop-types": "^15.8.1",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
