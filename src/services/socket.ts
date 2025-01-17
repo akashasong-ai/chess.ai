@@ -22,7 +22,8 @@ class GameSocket {
   socket: ReturnType<typeof io>;
 
   constructor() {
-    this.socket = io(SOCKET_URL, {
+    const wsUrl = SOCKET_URL.replace('https://', 'wss://');
+    this.socket = io(wsUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 5,
