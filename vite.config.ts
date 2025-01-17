@@ -5,11 +5,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://localhost:5001',
+      '/api': 'https://go-board-app-tunnel-mp5ybwn7.devinapps.com',
       '/socket.io': {
-        target: 'http://localhost:5001',
+        target: 'https://go-board-app-tunnel-mp5ybwn7.devinapps.com',
         ws: true
       }
     }
   }
-})   
+})         
