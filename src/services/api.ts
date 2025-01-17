@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://go-board-app-tunnel-mp5ybwn7.devinapps.com';
+const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
 
 const api = axios.create({
   baseURL: API_URL,
@@ -50,4 +50,4 @@ export const gameService = {
     const { data } = await api.get<Array<{ player: string; score: number }>>('/api/leaderboard');
     return data;
   },
-};                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+};                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                

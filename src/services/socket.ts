@@ -3,7 +3,7 @@ import type { ChessGameState } from '../types/chess';
 import type { GoGameState, GoGameUpdate } from '../types/go';
 import type { LeaderboardEntry } from '../types/leaderboard';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://go-board-app-tunnel-mp5ybwn7.devinapps.com';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || window.location.origin;
 
 type GameState = ChessGameState | GoGameState;
 
