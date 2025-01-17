@@ -1,46 +1,190 @@
 import React, { useState, useEffect } from 'react';
 import styles from './ChessBoard.module.css';
-import { ChessGameState } from '../../types/chess';
+import { ChessGameState, ChessPiece, PieceType, PieceColor } from '../../types/chess';
 import { gameSocket } from '../../services/socket';
+import { gameService } from '../../services/api';
+import { AI_PLAYERS } from '../../config/ai';
 
 interface ChessBoardProps {
-  gameId: string;
+  setLeaderboard: (leaderboard: Array<{ player: string; score: number }>) => void;
+  gameId?: string;
   playerColor?: 'white' | 'black';
   isSpectator?: boolean;
 }
 
 export const ChessBoard: React.FC<ChessBoardProps> = ({
+  setLeaderboard,
   gameId,
   playerColor = 'white',
   isSpectator = false
 }) => {
-  const [gameState, setGameState] = useState<ChessGameState | null>(null);
+  const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+  const ranks = ['1', '2', '3', '4', '5', '6', '7', '8'];
+  
+  const initialBoard: Record<string, ChessPiece> = {};
+  
+  // Initialize board with starting positions
+  files.forEach(file => {
+    ranks.forEach(rank => {
+      const position = `${file}${rank}`;
+
+      if (rank === '1' || rank === '2') {
+        const color: PieceColor = 'white';
+        let type: PieceType;
+        if (rank === '2') {
+          type = 'pawn';
+        } else {
+          switch (file) {
+            case 'a': case 'h': type = 'rook'; break;
+            case 'b': case 'g': type = 'knight'; break;
+            case 'c': case 'f': type = 'bishop'; break;
+            case 'd': type = 'queen'; break;
+            case 'e': type = 'king'; break;
+            default: type = 'pawn';
+          }
+        }
+        initialBoard[position] = { type, color, position };
+      }
+      else if (rank === '7' || rank === '8') {
+        const color: PieceColor = 'black';
+        let type: PieceType;
+        if (rank === '7') {
+          type = 'pawn';
+        } else {
+          switch (file) {
+            case 'a': case 'h': type = 'rook'; break;
+            case 'b': case 'g': type = 'knight'; break;
+            case 'c': case 'f': type = 'bishop'; break;
+            case 'd': type = 'queen'; break;
+            case 'e': type = 'king'; break;
+            default: type = 'pawn';
+          }
+        }
+        initialBoard[position] = { type, color, position };
+      }
+      else {
+        initialBoard[position] = null as unknown as ChessPiece;
+      }
+    });
+  });
+
+  const [gameState, setGameState] = useState<ChessGameState>({
+    board: initialBoard as Record<string, ChessPiece>,
+    currentTurn: 'white',
+    moves: [],
+    isCheck: false,
+    isCheckmate: false,
+    isStalemate: false
+  });
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<string[]>([]);
+  const [selectedWhiteAI, setSelectedWhiteAI] = useState<string>('');
+  const [selectedBlackAI, setSelectedBlackAI] = useState<string>('');
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
-    gameSocket.joinGame(gameId);
-    
-    const unsubscribe = gameSocket.onGameUpdate((state) => {
-      const chessState: ChessGameState = {
-        board: state.board || {},
-        currentTurn: state.currentTurn as 'white' | 'black',
-        moves: state.moves || [],
-        isCheck: state.isCheck || false,
-        isCheckmate: state.isCheckmate || false,
-        isStalemate: state.isStalemate || false
-      };
-      setGameState(chessState);
-    });
+    if (gameId) {
+      gameSocket.joinGame(gameId);
+      
+      const unsubscribe = gameSocket.onGameUpdate<ChessGameState>((state) => {
+        const chessState: ChessGameState = {
+          board: state.board || {},
+          currentTurn: state.currentTurn as 'white' | 'black',
+          moves: state.moves || [],
+          isCheck: state.isCheck || false,
+          isCheckmate: state.isCheckmate || false,
+          isStalemate: state.isStalemate || false
+        };
+        setGameState(chessState);
+        
+        // Update leaderboard if game is finished
+        if (state.isCheckmate || state.isStalemate) {
+          gameService.getLeaderboard('chess').then(setLeaderboard);
+        }
+      });
 
-    return () => {
-      unsubscribe();
-      gameSocket.leaveGame();
-    };
-  }, [gameId]);
+      return () => {
+        unsubscribe();
+        gameSocket.leaveGame();
+      };
+    }
+  }, [gameId, setLeaderboard]);
+
+  const handleStartGame = async () => {
+    try {
+      setIsPlaying(true);
+      const newGameId = await gameService.startGame('chess', selectedWhiteAI, selectedBlackAI);
+      // Update URL with game ID
+      window.history.pushState({}, '', `/game/${newGameId}`);
+    } catch (error) {
+      console.error('Failed to start game:', error);
+      setIsPlaying(false);
+    }
+  };
+
+  const handleRoundRobinTournament = async () => {
+    try {
+      const response = await fetch('/api/tournament/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          participants: AI_PLAYERS.map(ai => ai.id)
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to start tournament');
+      }
+      
+      setIsPlaying(true);
+      const data = await response.json();
+      console.log('Tournament started:', data);
+    } catch (error) {
+      console.error('Failed to start tournament:', error);
+      setIsPlaying(false);
+    }
+  };
+
+  const handleNewGame = () => {
+    setSelectedWhiteAI('');
+    setSelectedBlackAI('');
+    setGameState({
+      board: initialBoard,
+      currentTurn: 'white',
+      moves: [],
+      isCheck: false,
+      isCheckmate: false,
+      isStalemate: false
+    });
+    setIsPlaying(false);
+    window.history.pushState({}, '', '/');
+  };
+
+  const handleStopGame = async () => {
+    try {
+      setIsPlaying(false);
+      setGameState({
+        board: initialBoard,
+        currentTurn: 'white',
+        moves: [],
+        isCheck: false,
+        isCheckmate: false,
+        isStalemate: false
+      });
+      // Remove game ID from URL
+      window.history.pushState({}, '', '/');
+      // Update leaderboard
+      const leaderboard = await gameService.getLeaderboard('chess');
+      setLeaderboard(leaderboard);
+    } catch (error) {
+      console.error('Failed to stop game:', error);
+    }
+  };
 
   const handleSquareClick = (clickedPosition: string) => {
-    if (isSpectator || (gameState && gameState.currentTurn !== playerColor)) {
+    if (!isPlaying || isSpectator || (gameState && gameState.currentTurn !== playerColor)) {
       return;
     }
 
@@ -66,7 +210,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     }
   };
 
-  const renderSquare = (position: string) => {
+  const renderSquare = (position: string, isLight: boolean) => {
     const piece = gameState?.board[position];
     const isSelected = position === selectedSquare;
     const isValidMove = possibleMoves.includes(position);
@@ -74,7 +218,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     return (
       <div 
         key={position}
-        className={`${styles.square} ${isSelected ? styles.selected : ''} ${isValidMove ? styles.validMove : ''}`}
+        className={`${styles.square} ${isLight ? styles.lightSquare : styles.darkSquare} ${isSelected ? styles.selected : ''} ${isValidMove ? styles.validMove : ''}`}
         onClick={() => handleSquareClick(position)}
       >
         {piece && (
@@ -90,18 +234,85 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     
     return ranks.map(rank => (
       <div key={rank} className={styles.rank}>
-        {files.map(file => renderSquare(`${file}${rank}`))}
+        {files.map((file, fileIndex) => {
+          const rankIndex = ranks.indexOf(rank);
+          return renderSquare(`${file}${rank}`, (rankIndex + fileIndex) % 2 === 0);
+        })}
       </div>
     ));
   };
 
-  if (!gameState) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <div className={styles.chessBoard}>
-      {renderBoard()}
+    <div className={styles.chessBoardContainer}>
+      <div className={styles.playerSelection}>
+        <div className={styles.playerColumn}>
+          <h3>White Player</h3>
+          <select value={selectedWhiteAI} onChange={(e) => setSelectedWhiteAI(e.target.value)}>
+            <option value="">Select AI</option>
+            {AI_PLAYERS.map(ai => (
+              <option 
+                key={ai.id} 
+                value={ai.id}
+                disabled={ai.id === selectedBlackAI}
+              >
+                {ai.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.playerColumn}>
+          <h3>Black Player</h3>
+          <select value={selectedBlackAI} onChange={(e) => setSelectedBlackAI(e.target.value)}>
+            <option value="">Select AI</option>
+            {AI_PLAYERS.map(ai => (
+              <option 
+                key={ai.id} 
+                value={ai.id}
+                disabled={ai.id === selectedWhiteAI}
+              >
+                {ai.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className={styles.statusBar}>
+        {isPlaying 
+          ? `Current Turn: ${gameState.currentTurn.charAt(0).toUpperCase() + gameState.currentTurn.slice(1)} Player${gameState.isCheck ? ' - Check!' : ''}${gameState.isCheckmate ? ' - Checkmate!' : ''}${gameState.isStalemate ? ' - Stalemate!' : ''}`
+          : 'Select players and press Start Game to begin'}
+      </div>
+      <div className={styles.gameControls}>
+        <button 
+          onClick={handleStartGame}
+          disabled={!selectedWhiteAI || !selectedBlackAI || isPlaying}
+          className={styles.startButton}
+        >
+          Start Game
+        </button>
+        <button 
+          onClick={handleStopGame}
+          disabled={!isPlaying}
+          className={styles.stopButton}
+        >
+          Stop Game
+        </button>
+        <button 
+          onClick={handleNewGame}
+          className={styles.newButton}
+        >
+          New Game
+        </button>
+        <button 
+          onClick={handleRoundRobinTournament}
+          className={styles.tournamentButton}
+          disabled={isPlaying}
+        >
+          Round Robin Tournament
+        </button>
+      </div>
+      <div className={styles.chessBoard}>
+        {renderBoard()}
+      </div>
     </div>
   );
-}; 
+};                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        

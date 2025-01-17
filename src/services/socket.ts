@@ -1,15 +1,18 @@
 import io from 'socket.io-client';
 import type { ChessGameState } from '../types/chess';
+import type { GoGameState, GoGameUpdate } from '../types/go';
 import type { LeaderboardEntry } from '../types/leaderboard';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://go-board-app-tunnel-mp5ybwn7.devinapps.com';
+
+type GameState = ChessGameState | GoGameState;
 
 interface SocketEvents {
   // Server -> Client events
-  gameUpdate: (state: ChessGameState) => void;
+  gameUpdate: (state: GameState) => void;
   leaderboardUpdate: (data: LeaderboardEntry[]) => void;
   // Client -> Server events
-  move: (data: { from: string; to: string; gameId: string }) => void;
+  move: (data: { from?: string; to?: string; x?: number; y?: number; gameId: string }) => void;
   joinGame: (gameId: string) => void;
   leaveGame: () => void;
   getLeaderboard: () => void;
@@ -19,8 +22,31 @@ class GameSocket {
   socket: ReturnType<typeof io>;
 
   constructor() {
+    console.log('Initializing socket connection to:', SOCKET_URL);
     this.socket = io(SOCKET_URL, {
-      transports: ['websocket']
+      transports: ['polling', 'websocket'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      path: '/socket.io/',
+      auth: {
+        credentials: 'omit'
+      },
+      autoConnect: true,
+      timeout: 20000
+    });
+
+    // Add connection event handlers
+    this.socket.on('connect', () => {
+      console.log('Connected to game server');
+    });
+
+    this.socket.on('connect_error', (error: Error) => {
+      console.error('Connection error:', error);
+    });
+
+    this.socket.on('disconnect', (reason: string) => {
+      console.log('Disconnected:', reason);
     });
   }
 
@@ -32,9 +58,9 @@ class GameSocket {
     this.socket.emit('leaveGame');
   }
 
-  onGameUpdate(callback: (state: ChessGameState) => void) {
-    this.socket.on('gameUpdate', callback);
-    return () => this.socket.off('gameUpdate', callback);
+  onGameUpdate<T extends ChessGameState | GoGameUpdate>(callback: (state: T) => void) {
+    this.socket.on('gameUpdate', callback as (state: any) => void);
+    return () => this.socket.off('gameUpdate', callback as (state: any) => void);
   }
 
   onLeaderboardUpdate(callback: (data: LeaderboardEntry[]) => void) {
@@ -47,4 +73,4 @@ class GameSocket {
   }
 }
 
-export const gameSocket = new GameSocket(); 
+export const gameSocket = new GameSocket();

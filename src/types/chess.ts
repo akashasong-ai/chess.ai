@@ -16,10 +16,10 @@ export interface ChessMove {
 }
 
 export interface ChessGameState {
-  board: Record<string, ChessPiece>;
+  board: Record<string, ChessPiece | null>;
   currentTurn: PieceColor;
   moves: ChessMove[];
   isCheck: boolean;
   isCheckmate: boolean;
   isStalemate: boolean;
-} 
+}    

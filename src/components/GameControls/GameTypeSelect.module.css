@@ -1,0 +1,92 @@
+.gameTypeSelect {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 800px;
+  padding: 0 10px;
+}
+
+.gameOptions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  width: 100%;
+  max-width: 300px;
+}
+
+.gameOption {
+  flex: 1;
+  height: 44px; /* Minimum touch target size */
+  padding: 8px 16px;
+  border-radius: 4px;
+  background-color: #333;
+  color: #f2f2f2;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #444;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.gameOption:hover {
+  background-color: #444;
+}
+
+.gameOption:active {
+  transform: scale(0.98);
+}
+
+.gameOption.active {
+  background-color: #7fa650;
+  border-color: #8fb660;
+}
+
+.gameIcon {
+  font-size: 18px;
+}
+
+@media (max-width: 768px) {
+  .gameTypeSelect {
+    padding: 0 5px;
+  }
+
+  .gameOptions {
+    max-width: 250px;
+  }
+
+  .gameOption {
+    padding: 6px 12px;
+    font-size: 13px;
+    min-width: 90px;
+  }
+  
+  .gameIcon {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .gameOptions {
+    max-width: 200px;
+  }
+
+  .gameOption {
+    padding: 4px 8px;
+    font-size: 12px;
+    min-width: 80px;
+  }
+
+  .gameIcon {
+    font-size: 14px;
+  }
+}
