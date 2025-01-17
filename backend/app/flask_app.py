@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit
 import chess
 import random
 import logging
@@ -7,10 +8,22 @@ from itertools import combinations
 import time
 import os
 from pathlib import Path
+from typing import Dict, Optional, Any
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+# Initialize global game state
+chess_games: Dict[str, chess.Board] = {}
+go_games: Dict[str, Any] = {}
+game_state: Dict[str, Any] = {
+    'status': 'inactive',
+    'currentPlayer': 'white',
+    'whiteAI': None,
+    'blackAI': None,
+    'winner': None
+}
 
 app = Flask(__name__)
 CORS(app, resources={
@@ -20,11 +33,159 @@ CORS(app, resources={
         "allow_headers": ["Content-Type"]
     }
 })
-logging.basicConfig(level=logging.DEBUG)
+
+# Initialize Socket.IO
+socketio = SocketIO(app,
+    cors_allowed_origins=["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "https://*.devinapps.com"],
+    async_mode='threading',
+    logger=True,
+    engineio_logger=True,
+    ping_timeout=60000,
+    ping_interval=25000,
+    allow_credentials=True,
+    transports=['websocket', 'polling']
+)
+
+# Socket.IO event handlers
+def get_game_state_update(game_id: str, game_type: str = 'chess') -> Optional[dict]:
+    """Helper function to get current game state"""
+    try:
+        if game_type == 'chess' and game_id in chess_games:
+            game = chess_games[game_id]
+            return {
+                'board': [[str(game.piece_at(chess.square(col, row))) if game.piece_at(chess.square(col, row)) else ' '
+                          for col in range(8)] for row in range(7, -1, -1)],
+                'currentPlayer': game_state['currentPlayer'],
+                'status': 'finished' if game.is_game_over() else 'active',
+                'winner': game_state.get('winner'),
+                'gameType': 'chess'
+            }
+        elif game_type == 'go' and game_id in go_games:
+            game = go_games[game_id]
+            return {
+                'board': game.get_board(),
+                'lastMove': None,
+                'gameOver': game.is_game_over(),
+                'gameType': 'go'
+            }
+    except Exception as e:
+        logger.error(f"Error getting game state: {str(e)}")
+    return None
+
+@socketio.on('connect')
+def handle_connect():
+    """Handle client connection"""
+    logger.info('Client connected')
+    emit('connected', {'status': 'success'})
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Handle client disconnection"""
+    logger.info('Client disconnected')
+
+@socketio.on('joinGame')
+def handle_join_game(data):
+    """Handle client joining a game"""
+    try:
+        if not isinstance(data, dict):
+            game_id = str(data)  # Handle case where only game_id is sent
+            game_type = 'chess'  # Default to chess
+        else:
+            game_id = str(data.get('gameId'))
+            game_type = data.get('gameType', 'chess')
+
+        logger.info(f'Client joined {game_type} game {game_id}')
+        
+        current_state = get_game_state_update(game_id, game_type)
+        if current_state:
+            emit('gameUpdate', current_state)
+        else:
+            logger.error(f"Game {game_id} not found")
+            emit('error', {'message': f'Game {game_id} not found'})
+    except Exception as e:
+        logger.error(f"Error in handle_join_game: {str(e)}")
+        emit('error', {'message': str(e)})
+
+@socketio.on('leaveGame')
+def handle_leave_game():
+    logger.info('Client left game')
+
+@socketio.on('move')
+def handle_move(data):
+    """Handle game moves for both chess and go games"""
+    try:
+        global chess_games, go_games, game_state
+        game_id = str(data.get('gameId', ''))
+        move = data.get('move', {})
+        game_type = data.get('gameType', 'chess')
+
+        if not game_id:
+            logger.error("No game_id provided")
+            emit('error', {'message': 'No game_id provided'})
+            return
+
+        # Get current game state
+        current_state = get_game_state_update(game_id, game_type)
+        if not current_state:
+            logger.error(f"{game_type.capitalize()} game {game_id} not found")
+            emit('error', {'message': f'Game {game_id} not found'})
+            return
+
+        if game_type == 'chess':
+            if not move or 'from' not in move or 'to' not in move:
+                logger.error("Invalid chess move format")
+                emit('error', {'message': 'Invalid move format'})
+                return
+
+            game = chess_games[game_id]
+            try:
+                chess_move = chess.Move.from_uci(f"{move['from']}{move['to']}")
+                if chess_move in game.legal_moves:
+                    game.push(chess_move)
+                    
+                    # Update game state
+                    game_state['currentPlayer'] = 'black' if game_state['currentPlayer'] == 'white' else 'white'
+                    if game.is_game_over():
+                        game_state['status'] = 'finished'
+                        if game.is_checkmate():
+                            game_state['winner'] = 'black' if game_state['currentPlayer'] == 'white' else 'white'
+                    
+                    # Get updated state
+                    updated_state = get_game_state_update(game_id, 'chess')
+                    emit('gameUpdate', updated_state, broadcast=True)
+                else:
+                    emit('error', {'message': 'Invalid move'})
+            except ValueError as ve:
+                logger.error(f"Invalid chess move: {str(ve)}")
+                emit('error', {'message': 'Invalid move format'})
+
+        else:  # go game
+            if not move or 'x' not in move or 'y' not in move:
+                logger.error("Invalid go move format")
+                emit('error', {'message': 'Invalid move format'})
+                return
+
+            game = go_games[game_id]
+            try:
+                x, y = int(move['x']), int(move['y'])
+                if 0 <= x < 19 and 0 <= y < 19:  # Valid board coordinates
+                    if game.make_move(x, y):
+                        updated_state = get_game_state_update(game_id, 'go')
+                        emit('gameUpdate', updated_state, broadcast=True)
+                    else:
+                        emit('error', {'message': 'Invalid move'})
+                else:
+                    emit('error', {'message': 'Invalid board position'})
+            except (ValueError, TypeError) as e:
+                logger.error(f"Invalid go move coordinates: {str(e)}")
+                emit('error', {'message': 'Invalid move coordinates'})
+
+    except Exception as e:
+        logger.error(f"Error in handle_move: {str(e)}")
+        emit('error', {'message': 'Internal server error'})
 
 # Global variables
-board = None
-game_state = None
+board = chess.Board()  # Initialize chess board
 tournament_state = {
     'active': False,
     'matches': [],
@@ -305,8 +466,14 @@ def make_move():
 def stop_game():
     try:
         global board, game_state, tournament_state
-        board = None
-        game_state = None
+        board = chess.Board()  # Reset to new board
+        game_state.update({
+            'status': 'inactive',
+            'currentPlayer': 'white',
+            'whiteAI': None,
+            'blackAI': None,
+            'winner': None
+        })
         tournament_state['active'] = False
         return jsonify({'success': True})
     except Exception as e:
@@ -438,4 +605,12 @@ def request_ai_move():
         return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True)
+    socketio.run(app,
+        host='127.0.0.1',
+        port=5001,
+        debug=True,
+        use_reloader=True,
+        log_output=True,
+        allow_unsafe_werkzeug=True,  # Required for development server
+        cors_allowed_origins=["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "https://*.devinapps.com"]
+    )
