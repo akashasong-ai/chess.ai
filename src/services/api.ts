@@ -25,23 +25,29 @@ export interface GameState {
 }
 
 export const gameService = {
-  async startGame(gameType: GameType, player1: string, player2: string): Promise<string> {
-    const { data } = await api.post<{ gameId: string }>(`/${gameType}/start`, { player1, player2 });
+  async startGame(_gameType: GameType, player1: string, player2: string): Promise<string> {
+    const { data } = await api.post<{ success: boolean; gameId?: string }>('/api/game/start', {
+      whiteAI: player1,
+      blackAI: player2
+    });
+    if (!data.success || !data.gameId) {
+      throw new Error('Failed to start game');
+    }
     return data.gameId;
   },
 
-  async getGameState(gameId: string): Promise<GameState> {
-    const { data } = await api.get<GameState>(`/chess/state/${gameId}`);
+  async getGameState(_gameId: string): Promise<GameState> {
+    const { data } = await api.get<GameState>('/api/game/state');
     return data;
   },
 
   async makeMove(gameId: string, move: GameMove): Promise<GameState> {
-    const { data } = await api.post<GameState>(`/chess/move`, { gameId, move });
+    const { data } = await api.post<GameState>('/api/game/move', { gameId, move });
     return data;
   },
 
-  async getLeaderboard(gameType: GameType): Promise<Array<{ player: string; score: number }>> {
-    const { data } = await api.get<Array<{ player: string; score: number }>>(`/${gameType}/leaderboard`);
+  async getLeaderboard(_gameType: GameType): Promise<Array<{ player: string; score: number }>> {
+    const { data } = await api.get<Array<{ player: string; score: number }>>('/api/leaderboard');
     return data;
   },
-};                                    
+};                                                                                                                                                                                                                        

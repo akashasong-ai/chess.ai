@@ -31,6 +31,19 @@ class GameSocket {
         credentials: 'include'
       }
     });
+
+    // Add connection event handlers
+    this.socket.on('connect', () => {
+      console.log('Connected to game server');
+    });
+
+    this.socket.on('connect_error', (error: Error) => {
+      console.error('Connection error:', error);
+    });
+
+    this.socket.on('disconnect', (reason: string) => {
+      console.log('Disconnected:', reason);
+    });
   }
 
   joinGame(gameId: string) {

@@ -203,14 +203,24 @@ leaderboard = {
 
 def start_new_game(white_ai=None, black_ai=None):
     global board, game_state
-    board = chess.Board()
-    game_state = {
-        'status': 'active',
-        'currentPlayer': 'white',
-        'whiteAI': white_ai,
-        'blackAI': black_ai
-    }
-    return True
+    try:
+        logger.info("Initializing new game state...")
+        board = chess.Board()
+        game_state = {
+            'status': 'active',
+            'currentPlayer': 'white',
+            'whiteAI': white_ai,
+            'blackAI': black_ai,
+            'winner': None,
+            'isCheck': False,
+            'isCheckmate': False,
+            'isStalemate': False
+        }
+        logger.info("Game state initialized successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Error in start_new_game: {str(e)}")
+        return False
 
 # Add these helper functions at the top
 def get_next_ai_move(board, ai_name):
@@ -365,13 +375,25 @@ def start_game():
         return '', 200
         
     try:
+        logger.info("Starting new game...")
         data = request.get_json()
         white_ai = data.get('whiteAI')
         black_ai = data.get('blackAI')
+        logger.info(f"Selected players - White: {white_ai}, Black: {black_ai}")
+        
         success = start_new_game(white_ai, black_ai)
-        return jsonify({'success': success})
+        if success:
+            logger.info("Game started successfully")
+            # Create a new game ID and add it to chess_games
+            game_id = str(random.randint(1000, 9999))
+            chess_games[game_id] = chess.Board()
+            logger.info(f"Created new game with ID: {game_id}")
+            return jsonify({'success': True, 'gameId': game_id})
+        else:
+            logger.error("Failed to start game")
+            return jsonify({'error': 'Failed to start game'}), 400
     except Exception as e:
-        logging.error(f"Error in start_game: {str(e)}")
+        logger.error(f"Error in start_game: {str(e)}")
         return jsonify({'error': str(e)}), 400
 
 # Add this helper function to convert board to FEN (Forsyth–Edwards Notation)

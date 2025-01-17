@@ -4,6 +4,13 @@
   align-items: center;
   gap: 20px;
   padding: 20px;
+  max-width: min(560px, 95vmin);
+  margin: 0 auto;
+  background-color: #2a2a2a;
+  color: #f2f2f2;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 
 .playerSelection {
@@ -31,19 +38,76 @@
   margin-bottom: 20px;
 }
 
+.gameControls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 10px 0;
+}
+
 .gameControls button {
-  padding: 10px 20px;
-  font-size: 16px;
+  padding: 8px 16px;
   border-radius: 4px;
   border: none;
-  background-color: #4CAF50;
-  color: white;
+  color: #f2f2f2;
+  font-size: 14px;
   cursor: pointer;
+  transition: all 0.2s;
+  min-width: 100px;
+  margin: 0 5px;
+}
+
+.startButton {
+  background-color: #7fa650;
+}
+
+.startButton:hover:not(:disabled) {
+  background-color: #8fb660;
+}
+
+.stopButton {
+  background-color: #d32f2f;
+}
+
+.stopButton:hover:not(:disabled) {
+  background-color: #e33e3e;
+}
+
+.newButton {
+  background-color: #1976d2;
+}
+
+.newButton:hover:not(:disabled) {
+  background-color: #1e88e5;
+}
+
+.tournamentButton {
+  background-color: #9c27b0;
+}
+
+.tournamentButton:hover:not(:disabled) {
+  background-color: #ab47bc;
 }
 
 .gameControls button:disabled {
-  background-color: #cccccc;
+  background-color: #444;
+  color: #666;
   cursor: not-allowed;
+}
+
+.statusBar {
+  width: 100%;
+  padding: 6px;
+  margin: 5px 0;
+  background-color: #1a1a1a;
+  border-radius: 4px;
+  color: #f2f2f2;
+  text-align: center;
+  font-size: 14px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .goBoard {
@@ -119,4 +183,50 @@
 
 .lastMove {
   box-shadow: 0 0 10px #ff0000;
+}
+
+@media (max-width: 768px) {
+  .goBoardContainer {
+    padding: 10px;
+  }
+
+  .playerSelection {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .playerColumn {
+    width: 100%;
+  }
+
+  .playerColumn select {
+    max-width: 100%;
+    height: 44px;
+  }
+
+  .gameControls {
+    flex-wrap: wrap;
+  }
+
+  .gameControls button {
+    flex: 1;
+    min-width: 120px;
+    height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .goBoardContainer {
+    padding: 5px;
+  }
+
+  .playerColumn h3 {
+    font-size: 14px;
+  }
+
+  .gameControls button {
+    padding: 8px 12px;
+    font-size: 14px;
+    min-width: 100px;
+  }
 }

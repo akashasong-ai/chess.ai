@@ -26,7 +26,8 @@ export const GoBoard: React.FC<GoBoardProps> = ({
   const AI_PLAYERS = [
     { id: 'gpt4', name: 'GPT-4', description: 'OpenAI GPT-4' },
     { id: 'claude2', name: 'Claude 2', description: 'Anthropic Claude 2' },
-    { id: 'gemini', name: 'Gemini Pro', description: 'Google Gemini Pro' }
+    { id: 'gemini', name: 'Gemini Pro', description: 'Google Gemini Pro' },
+    { id: 'perplexity', name: 'Perplexity', description: 'Perplexity AI' }
   ];
 
   useEffect(() => {
@@ -76,6 +77,39 @@ export const GoBoard: React.FC<GoBoardProps> = ({
     }
   };
 
+  const handleNewGame = () => {
+    setSelectedWhiteAI('');
+    setSelectedBlackAI('');
+    setBoard(Array(19).fill(Array(19).fill(0)));
+    setIsPlaying(false);
+    window.history.pushState({}, '', '/');
+  };
+
+  const handleRoundRobinTournament = async () => {
+    try {
+      const response = await fetch('/api/tournament/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          participants: AI_PLAYERS.map(ai => ai.id)
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to start tournament');
+      }
+      
+      setIsPlaying(true);
+      const data = await response.json();
+      console.log('Tournament started:', data);
+    } catch (error) {
+      console.error('Failed to start tournament:', error);
+      setIsPlaying(false);
+    }
+  };
+
   const handleIntersectionClick = (x: number, y: number) => {
     if (!isPlaying || isSpectator) return;
     
@@ -112,7 +146,13 @@ export const GoBoard: React.FC<GoBoardProps> = ({
           <select value={selectedWhiteAI} onChange={(e) => setSelectedWhiteAI(e.target.value)}>
             <option value="">Select AI</option>
             {AI_PLAYERS.map(ai => (
-              <option key={ai.id} value={ai.id}>{ai.name}</option>
+              <option 
+                key={ai.id} 
+                value={ai.id}
+                disabled={ai.id === selectedBlackAI}
+              >
+                {ai.name}
+              </option>
             ))}
           </select>
         </div>
@@ -121,17 +161,49 @@ export const GoBoard: React.FC<GoBoardProps> = ({
           <select value={selectedBlackAI} onChange={(e) => setSelectedBlackAI(e.target.value)}>
             <option value="">Select AI</option>
             {AI_PLAYERS.map(ai => (
-              <option key={ai.id} value={ai.id}>{ai.name}</option>
+              <option 
+                key={ai.id} 
+                value={ai.id}
+                disabled={ai.id === selectedWhiteAI}
+              >
+                {ai.name}
+              </option>
             ))}
           </select>
         </div>
       </div>
+      <div className={styles.statusBar}>
+        {isPlaying 
+          ? `Current Turn: ${isPlaying ? (lastMove ? 'Black' : 'White') : ''} Player${lastMove ? ` - Last Move: (${lastMove.x}, ${lastMove.y})` : ''}`
+          : 'Select players and press Start Game to begin'}
+      </div>
       <div className={styles.gameControls}>
         <button 
-          onClick={isPlaying ? handleStopGame : handleStartGame}
-          disabled={!selectedWhiteAI || !selectedBlackAI}
+          onClick={handleStartGame}
+          disabled={!selectedWhiteAI || !selectedBlackAI || isPlaying}
+          className={styles.startButton}
         >
-          {isPlaying ? 'Stop Game' : 'Start Game'}
+          Start Game
+        </button>
+        <button 
+          onClick={handleStopGame}
+          disabled={!isPlaying}
+          className={styles.stopButton}
+        >
+          Stop Game
+        </button>
+        <button 
+          onClick={handleNewGame}
+          className={styles.newButton}
+        >
+          New Game
+        </button>
+        <button 
+          onClick={handleRoundRobinTournament}
+          className={styles.tournamentButton}
+          disabled={isPlaying}
+        >
+          Round Robin Tournament
         </button>
       </div>
       <div className={styles.goBoard}>

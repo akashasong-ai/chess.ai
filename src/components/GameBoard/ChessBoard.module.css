@@ -89,10 +89,33 @@
   background-color: #1e88e5;
 }
 
+.tournamentButton {
+  background-color: #9c27b0;
+}
+
+.tournamentButton:hover:not(:disabled) {
+  background-color: #ab47bc;
+}
+
 .gameControls button:disabled {
   background-color: #444;
   color: #666;
   cursor: not-allowed;
+}
+
+.statusBar {
+  width: 100%;
+  padding: 6px;
+  margin: 5px 0;
+  background-color: #1a1a1a;
+  border-radius: 4px;
+  color: #f2f2f2;
+  text-align: center;
+  font-size: 14px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .chessBoard {
@@ -224,4 +247,4 @@
 .square, .piece {
   user-select: none;
   -webkit-user-select: none;
-}                                                                        
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
