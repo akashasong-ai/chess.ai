@@ -31,6 +31,8 @@
   text-align: center;
   border-bottom: 1px solid #444;
   width: calc(100% / 6);
+  display: table-cell;
+  vertical-align: middle;
 }
 
 .table th {
@@ -63,4 +65,4 @@
 
 .row:nth-child(3) td:first-child {
   color: #cd7f32; /* bronze */
-}                                                                                                                                       
+}                                                                                                                                                                  
