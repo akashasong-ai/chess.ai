@@ -92,15 +92,15 @@ function ChessBoard({ mode, whiteAI, blackAI }) {
         key={square}
         w="60px"
         h="60px"
-        bg={isLight ? 'orange.50' : 'orange.400'}
+        bg={isLight ? 'board.light' : 'board.dark'}
         display="flex"
         alignItems="center"
         justifyContent="center"
         cursor="pointer"
         onClick={() => handleSquareClick(square)}
         position="relative"
-        _hover={{ bg: selectedSquare === square ? 'blue.400' : (isLight ? 'orange.100' : 'orange.500') }}
-        backgroundColor={selectedSquare === square ? 'blue.400' : (isLight ? 'orange.50' : 'orange.400')}
+        _hover={{ bg: selectedSquare === square ? 'blue.400' : (isLight ? 'board.light' : 'board.dark') }}
+        backgroundColor={selectedSquare === square ? 'blue.400' : (isLight ? 'board.light' : 'board.dark')}
       >
         {piece && (
           <Text fontSize="4xl">
@@ -177,13 +177,24 @@ function ChessBoard({ mode, whiteAI, blackAI }) {
       </Grid>
       
       <VStack mt={4} align="stretch" spacing={4}>
-        <HStack justify="space-between">
-          <Text fontSize="xl" fontWeight="bold">
-            {mode === 'player-vs-ai' ? 'Player vs AI' : 'AI vs AI'}
-          </Text>
-          <Button 
-            colorScheme="blue" 
-            size="sm" 
+        <HStack justify="space-between" spacing={3}>
+          <Button
+            variant="game"
+            isDisabled={!gameState}
+            onClick={() => api.startGame(whiteAI, blackAI)}
+          >
+            Start Game
+          </Button>
+          <Button
+            variant="game"
+            isDisabled={!gameState}
+            onClick={() => api.stopGame()}
+          >
+            Stop Game
+          </Button>
+          <Button
+            variant="game"
+            colorScheme="blue"
             onClick={async () => {
               try {
                 await api.startGame(whiteAI, blackAI)
@@ -204,6 +215,13 @@ function ChessBoard({ mode, whiteAI, blackAI }) {
             }}
           >
             New Game
+          </Button>
+          <Button
+            variant="game"
+            colorScheme="purple"
+            onClick={() => api.startTournament()}
+          >
+            Round Robin Tournament
           </Button>
         </HStack>
         
