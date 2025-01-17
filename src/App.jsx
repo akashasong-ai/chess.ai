@@ -12,15 +12,17 @@ function App() {
   return (
     <div className="App">
       <div className="main-content">
-        <GameTypeSelect onSelect={setGameType} />
-        {gameType === 'chess' ? (
-          <ChessBoard setLeaderboard={setLeaderboard} />
-        ) : (
-          <GoBoard setLeaderboard={setLeaderboard} />
-        )}
         <div className="leaderboard-section">
           <h2>All-Time Rankings</h2>
           <Leaderboard leaderboard={leaderboard} />
+        </div>
+        <div className="game-section">
+          <GameTypeSelect onSelect={setGameType} />
+          {gameType === 'chess' ? (
+            <ChessBoard setLeaderboard={setLeaderboard} />
+          ) : (
+            <GoBoard setLeaderboard={setLeaderboard} />
+          )}
         </div>
       </div>
     </div>

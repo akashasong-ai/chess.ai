@@ -1,28 +1,32 @@
-import './styles.css';
-
+import { useState } from 'react';
 import PropTypes from 'prop-types';
+import styles from './GameTypeSelect.module.css';
 
 const GameTypeSelect = ({ onSelect }) => {
+    const [activeGame, setActiveGame] = useState('chess');
+
+    const handleGameSelect = (game) => {
+        setActiveGame(game);
+        onSelect(game);
+    };
+
     return (
-        <div className="game-type-select">
-            <h2>Select Game Type</h2>
-            <div className="game-options">
-                <div 
-                    className="game-option chess"
-                    onClick={() => onSelect('chess')}
+        <div className={styles.gameTypeSelect}>
+            <div className={styles.gameOptions}>
+                <button 
+                    className={`${styles.gameOption} ${activeGame === 'chess' ? styles.active : ''}`}
+                    onClick={() => handleGameSelect('chess')}
                 >
-                    <div className="game-icon">♔</div>
-                    <h3>Chess</h3>
-                    <p>Classic strategy game with AI opponents</p>
-                </div>
-                <div 
-                    className="game-option go"
-                    onClick={() => onSelect('go')}
+                    <span className={styles.gameIcon}>♔</span>
+                    Chess
+                </button>
+                <button 
+                    className={`${styles.gameOption} ${activeGame === 'go' ? styles.active : ''}`}
+                    onClick={() => handleGameSelect('go')}
                 >
-                    <div className="game-icon">⚫</div>
-                    <h3>Go</h3>
-                    <p>Ancient board game of territory control</p>
-                </div>
+                    <span className={styles.gameIcon}>⚫</span>
+                    Go
+                </button>
             </div>
         </div>
     );
