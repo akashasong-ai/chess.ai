@@ -1,6 +1,6 @@
 .leaderboard {
   width: 100%;
-  max-width: min(480px, 85vmin);
+  max-width: min(560px, 95vmin);
   margin: 20px auto;
   display: flex;
   flex-direction: column;
@@ -62,4 +62,4 @@
 
 .row:nth-child(3) td:first-child {
   color: #cd7f32; /* bronze */
-}         
+}                           
