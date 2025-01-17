@@ -12,47 +12,26 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Create FastAPI app first
+# Create FastAPI app
 app = FastAPI(title="Chess AI Game")
+
+# Import Flask app
+from .flask_app import app as flask_app, board, game_state, tournament_state, leaderboard
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://go-board-app-tvgfvqil.devinapps.com",
         "http://localhost:5173",
         "http://localhost:5174",
         "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-        "https://*.devinapps.com"
+        "http://127.0.0.1:5174"
     ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
-)
-
-# Import Flask app after FastAPI app is created
-from .flask_app import app as flask_app, board, game_state, tournament_state, leaderboard
-
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
-# Create FastAPI app
-app = FastAPI(title="Chess AI Game")
-
-# Configure CORS to match Flask app settings
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-        "https://*.devinapps.com"
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # Store active WebSocket connections
@@ -62,6 +41,7 @@ async def forward_request_to_flask(request: Request, path: str) -> Response:
     """
     Forward HTTP request to Flask app and return response
     """
+    logger.debug(f"Forwarding {request.method} request to path: {path}")
     try:
         # Get request data
         method = request.method
@@ -113,10 +93,12 @@ async def catch_all(request: Request, path: str):
     """
     Catch-all route that forwards all requests to the Flask app
     """
+    if request.method == "OPTIONS":
+        return Response(status_code=200)
     return await forward_request_to_flask(request, path)
 
-@app.websocket("/socket.io/{path:path}")
-async def websocket_endpoint(websocket: WebSocket, path: str):
+@app.websocket("/socket.io/")
+async def websocket_endpoint(websocket: WebSocket):
     """
     WebSocket endpoint that handles game state updates
     """

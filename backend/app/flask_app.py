@@ -27,23 +27,40 @@ game_state: Dict[str, Any] = {
 
 app = Flask(__name__)
 CORS(app, resources={
-    r"/api/*": {
-        "origins": ["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "https://*.devinapps.com"],
+    r"/*": {
+        "origins": [
+            "https://go-board-app-tvgfvqil.devinapps.com",
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:5174"
+        ],
         "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
+        "allow_headers": ["Content-Type"],
+        "supports_credentials": True
     }
 })
 
 # Initialize Socket.IO
 socketio = SocketIO(app,
-    cors_allowed_origins=["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "https://*.devinapps.com"],
+    cors_allowed_origins=[
+        "https://go-board-app-tvgfvqil.devinapps.com",
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174"
+    ],
     async_mode='threading',
     logger=True,
     engineio_logger=True,
     ping_timeout=60000,
     ping_interval=25000,
     allow_credentials=True,
-    transports=['websocket', 'polling']
+    transports=['websocket', 'polling'],
+    cors_credentials=True,
+    cors_supports_credentials=True,
+    cors_expose_headers="*",
+    cors_methods=["GET", "POST", "OPTIONS"]
 )
 
 # Socket.IO event handlers

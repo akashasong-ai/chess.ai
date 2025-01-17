@@ -117,7 +117,7 @@
   grid-template-columns: repeat(19, 1fr);
   grid-template-rows: repeat(19, 1fr);
   width: 100%;
-  max-width: min(560px, 95vmin);
+  max-width: 800px;
   aspect-ratio: 1 / 1;
   background-color: #DEB887;
   border: 1px solid #8B4513;
@@ -125,6 +125,7 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   gap: 0;
   padding: 0;
+  margin: 0 auto;
 }
 
 .row {
