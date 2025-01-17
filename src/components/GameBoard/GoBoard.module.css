@@ -124,7 +124,7 @@
   border-radius: 4px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   gap: 0;
-  padding: 10px;
+  padding: 0;
 }
 
 .row {
