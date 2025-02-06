@@ -4,7 +4,7 @@ import anthropic
 import httpx
 import google.generativeai as generativeai
 from typing import Dict, Any
-from config import get_ai_config
+from .config import get_ai_config
 from openings import get_opening_move, evaluate_position
 
 class LLMInterface:
@@ -120,4 +120,4 @@ Explain your strategic thinking, then provide ONLY the move notation on the last
         except Exception as e:
             print(f"Error generating move with {self.api_type}: {str(e)}")
             # Return a default move in case of error (e2e4)
-            return "e2e4"                  
+            return "e2e4"                                    
