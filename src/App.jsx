@@ -24,6 +24,7 @@ function App() {
       <h1 className={styles.title}>AI Game Arena</h1>
       <GameTypeSelect onSelect={setGameType} />
       <div className={styles.gameContainer}>
+        <Leaderboard leaderboard={leaderboard} gameType={gameType} />
         <StatusBar error={error} />
         <PlayerSelect 
           gameType={gameType}
@@ -49,7 +50,6 @@ function App() {
             />
           )}
         </div>
-        <Leaderboard leaderboard={leaderboard} gameType={gameType} />
       </div>
     </div>
   );
