@@ -19,6 +19,7 @@ const PlayerSelect = ({ gameType, onSelectPlayer1, onSelectPlayer2, selectedPlay
             value={selectedPlayer1} 
             onChange={(e) => onSelectPlayer1(e.target.value)}
             className={styles.select}
+            aria-label={`Player 1 (${gameType === 'chess' ? 'White' : 'Black'})`}
           >
             <option value="">Select AI</option>
             {AI_PLAYERS.map(ai => (
@@ -39,6 +40,7 @@ const PlayerSelect = ({ gameType, onSelectPlayer1, onSelectPlayer2, selectedPlay
             value={selectedPlayer2} 
             onChange={(e) => onSelectPlayer2(e.target.value)}
             className={styles.select}
+            aria-label={`Player 2 (${gameType === 'chess' ? 'Black' : 'White'})`}
           >
             <option value="">Select AI</option>
             {AI_PLAYERS.map(ai => (
