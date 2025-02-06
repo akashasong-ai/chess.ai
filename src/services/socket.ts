@@ -3,7 +3,12 @@ import type { ChessGameState } from '../types/chess';
 import type { GoGameState, GoGameUpdate } from '../types/go';
 import type { LeaderboardEntry } from '../types/leaderboard';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://ai-arena-backend.onrender.com';
+if (!import.meta.env.VITE_SOCKET_URL) {
+  console.error('VITE_SOCKET_URL environment variable is not set');
+}
+
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://chess-ai-backend.onrender.com';
+console.log('Using WebSocket URL:', SOCKET_URL);
 
 type GameState = ChessGameState | GoGameState;
 

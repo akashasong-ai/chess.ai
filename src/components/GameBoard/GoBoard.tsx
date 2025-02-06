@@ -8,18 +8,20 @@ import styles from './GoBoard.module.css';
 
 interface GoBoardProps {
   setLeaderboard: (leaderboard: Array<{ player: string; score: number }>) => void;
+  player1: string;
+  player2: string;
   gameId?: string;
   isSpectator?: boolean;
 }
 
 export const GoBoard: React.FC<GoBoardProps> = ({
   setLeaderboard,
+  player1,
+  player2,
   gameId,
   isSpectator = false
 }) => {
   const [board, setBoard] = useState<number[][]>(Array(19).fill(Array(19).fill(0)));
-  const [selectedWhiteAI, setSelectedWhiteAI] = useState<string>('');
-  const [selectedBlackAI, setSelectedBlackAI] = useState<string>('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [lastMove, setLastMove] = useState<{ x: number; y: number } | null>(null);
 
@@ -57,7 +59,7 @@ export const GoBoard: React.FC<GoBoardProps> = ({
   const handleStartGame = async () => {
     try {
       setIsPlaying(true);
-      const newGameId = await gameService.startGame('go', selectedWhiteAI, selectedBlackAI);
+      const newGameId = await gameService.startGame('go', player1, player2);
       window.history.pushState({}, '', `/game/${newGameId}`);
       gameSocket.joinGame(newGameId);
     } catch (error) {
@@ -79,8 +81,6 @@ export const GoBoard: React.FC<GoBoardProps> = ({
   };
 
   const handleNewGame = () => {
-    setSelectedWhiteAI('');
-    setSelectedBlackAI('');
     setBoard(Array(19).fill(Array(19).fill(0)));
     setIsPlaying(false);
     window.history.pushState({}, '', '/');
@@ -141,38 +141,7 @@ export const GoBoard: React.FC<GoBoardProps> = ({
 
   return (
     <div className={styles.goBoardContainer}>
-      <div className={styles.playerSelection}>
-        <div className={styles.playerColumn}>
-          <h3>White Player</h3>
-          <select value={selectedWhiteAI} onChange={(e) => setSelectedWhiteAI(e.target.value)}>
-            <option value="">Select AI</option>
-            {AI_PLAYERS.map(ai => (
-              <option 
-                key={ai.id} 
-                value={ai.id}
-                disabled={ai.id === selectedBlackAI}
-              >
-                {ai.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className={styles.playerColumn}>
-          <h3>Black Player</h3>
-          <select value={selectedBlackAI} onChange={(e) => setSelectedBlackAI(e.target.value)}>
-            <option value="">Select AI</option>
-            {AI_PLAYERS.map(ai => (
-              <option 
-                key={ai.id} 
-                value={ai.id}
-                disabled={ai.id === selectedWhiteAI}
-              >
-                {ai.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+
       <div className={styles.statusBar}>
         {isPlaying 
           ? `Current Turn: ${isPlaying ? (lastMove ? 'Black' : 'White') : ''} Player${lastMove ? ` - Last Move: (${lastMove.x}, ${lastMove.y})` : ''}`
@@ -181,7 +150,7 @@ export const GoBoard: React.FC<GoBoardProps> = ({
       <div className={styles.gameControls}>
         <button 
           onClick={handleStartGame}
-          disabled={!selectedWhiteAI || !selectedBlackAI || isPlaying}
+          disabled={!player1 || !player2 || isPlaying}
           className={styles.startButton}
         >
           Start Game
