@@ -1,0 +1,87 @@
+.tournament {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #1a1a1a;
+}
+
+.startButton {
+  width: 100%;
+  padding: 0.75rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.startButton:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.startButton:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.matches {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.matchCard {
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #f9fafb;
+}
+
+.players {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.players span:nth-child(2) {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.status {
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+.winner {
+  color: #059669;
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .tournament {
+    padding: 1rem;
+  }
+  
+  .title {
+    font-size: 1.25rem;
+  }
+  
+  .matchCard {
+    padding: 0.75rem;
+  }
+}
