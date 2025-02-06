@@ -1,5 +1,4 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask import request, jsonify
 from flask_socketio import SocketIO, emit
 import chess
 import random
@@ -7,9 +6,9 @@ import logging
 import os
 from itertools import combinations
 import time
-import os
 from pathlib import Path
 from typing import Dict, Optional, Any
+from backend.app import app
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -26,17 +25,6 @@ game_state: Dict[str, Any] = {
     'winner': None
 }
 
-app = Flask(__name__, static_folder='../frontend/dist', static_url_path='/')
-CORS(app, resources={
-    r"/*": {
-        "origins": ["http://localhost:5173"],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"],
-        "supports_credentials": False,
-        "expose_headers": ["Content-Type"]
-    }
-})
-
 # Initialize Socket.IO
 socketio = SocketIO(app,
     cors_allowed_origins="*",
@@ -49,32 +37,24 @@ socketio = SocketIO(app,
     transports=['polling', 'websocket']
 )
 
-# Socket.IO event handlers
-def get_game_state_update(game_id: str, game_type: str = 'chess') -> Optional[dict]:
-    """Helper function to get current game state"""
-    try:
-        if game_type == 'chess' and game_id in chess_games:
-            game = chess_games[game_id]
-            return {
-                'board': [[str(game.piece_at(chess.square(col, row))) if game.piece_at(chess.square(col, row)) else ' '
-                          for col in range(8)] for row in range(7, -1, -1)],
-                'currentPlayer': game_state['currentPlayer'],
-                'status': 'finished' if game.is_game_over() else 'active',
-                'winner': game_state.get('winner'),
-                'gameType': 'chess'
-            }
-        elif game_type == 'go' and game_id in go_games:
-            game = go_games[game_id]
-            return {
-                'board': game.get_board(),
-                'lastMove': None,
-                'gameOver': game.is_game_over(),
-                'gameType': 'go'
-            }
-    except Exception as e:
-        logger.error(f"Error getting game state: {str(e)}")
-    return None
+# Initialize global variables
+board = chess.Board()  # Initialize chess board
+tournament_state = {
+    'active': False,
+    'matches': [],
+    'current_match': 0,
+    'results': {},
+    'participants': []
+}
 
+leaderboard = {
+    'GPT-4': {'wins': 5, 'losses': 2, 'draws': 1},
+    'Claude 2': {'wins': 4, 'losses': 3, 'draws': 1},
+    'Gemini Pro': {'wins': 3, 'losses': 4, 'draws': 0},
+    'Perplexity': {'wins': 2, 'losses': 5, 'draws': 2}
+}
+
+# Socket.IO event handlers
 @socketio.on('connect')
 def handle_connect():
     """Handle client connection"""
@@ -187,115 +167,31 @@ def handle_move(data):
         logger.error(f"Error in handle_move: {str(e)}")
         emit('error', {'message': 'Internal server error'})
 
-# Serve static files
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_static(path):
+def get_game_state_update(game_id: str, game_type: str = 'chess') -> Optional[dict]:
+    """Helper function to get current game state"""
     try:
-        if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-            return app.send_static_file(path)
-        return app.send_static_file('index.html')
+        if game_type == 'chess' and game_id in chess_games:
+            game = chess_games[game_id]
+            return {
+                'board': [[str(game.piece_at(chess.square(col, row))) if game.piece_at(chess.square(col, row)) else ' '
+                          for col in range(8)] for row in range(7, -1, -1)],
+                'currentPlayer': game_state['currentPlayer'],
+                'status': 'finished' if game.is_game_over() else 'active',
+                'winner': game_state.get('winner'),
+                'gameType': 'chess'
+            }
+        elif game_type == 'go' and game_id in go_games:
+            game = go_games[game_id]
+            return {
+                'board': game.get_board(),
+                'lastMove': None,
+                'gameOver': game.is_game_over(),
+                'gameType': 'go'
+            }
     except Exception as e:
-        logging.error(f"Error serving static file: {str(e)}")
-        return app.send_static_file('index.html')
+        logger.error(f"Error getting game state: {str(e)}")
+    return None
 
-# Global variables
-board = chess.Board()  # Initialize chess board
-tournament_state = {
-    'active': False,
-    'matches': [],
-    'current_match': 0,
-    'results': {},
-    'participants': []
-}
-
-# Add global leaderboard variable with test data
-leaderboard = {
-    'GPT-4': {'wins': 5, 'losses': 2, 'draws': 1},
-    'Claude 2': {'wins': 4, 'losses': 3, 'draws': 1},
-    'Gemini Pro': {'wins': 3, 'losses': 4, 'draws': 0},
-    'Perplexity': {'wins': 2, 'losses': 5, 'draws': 2}
-}
-
-def start_new_game(white_ai=None, black_ai=None):
-    global board, game_state
-    try:
-        logger.info("Initializing new game state...")
-        board = chess.Board()
-        game_state = {
-            'status': 'active',
-            'currentPlayer': 'white',
-            'whiteAI': white_ai,
-            'blackAI': black_ai,
-            'winner': None,
-            'isCheck': False,
-            'isCheckmate': False,
-            'isStalemate': False
-        }
-        logger.info("Game state initialized successfully")
-        return True
-    except Exception as e:
-        logger.error(f"Error in start_new_game: {str(e)}")
-        return False
-
-# Add these helper functions at the top
-def get_next_ai_move(board, ai_name):
-    try:
-        if board is None:
-            logger.error("Board is None in get_next_ai_move")
-            return None
-            
-        if board.is_game_over():
-            return None
-            
-        legal_moves = list(board.legal_moves)
-        if not legal_moves:
-            return None
-            
-        # Use the improved AI logic we added earlier
-        best_move = get_ai_move(ai_name, board)
-        return best_move if best_move else random.choice(legal_moves)
-        
-    except Exception as e:
-        logger.error(f"Error getting AI move: {str(e)}")
-        return None
-
-def process_tournament_move():
-    try:
-        global board, game_state
-        if not tournament_state['active'] or not game_state or board is None:
-            logger.debug("Tournament not active, game state None, or board None")
-            return
-            
-        current_match = tournament_state['matches'][tournament_state['current_match']]
-        current_player = game_state.get('currentPlayer')
-        if not current_player:
-            logger.error("Current player not set in game state")
-            return
-            
-        ai_name = current_match['white'] if current_player == 'white' else current_match['black']
-        
-        # Add delay to make moves visible
-        time.sleep(0.5)  # 500ms delay between moves
-        
-        move = get_next_ai_move(board, ai_name)
-        if move:
-            logger.debug(f"{ai_name} making move: {move}")
-            board.push(move)
-            game_state['currentPlayer'] = 'black' if current_player == 'white' else 'white'
-            
-            if board.is_game_over():
-                winner = None
-                if board.is_checkmate():
-                    winner = current_match['white'] if current_player == 'white' else current_match['black']
-                game_state['status'] = 'finished'
-                game_state['winner'] = winner
-                handle_game_over(winner)
-                
-    except Exception as e:
-        logger.error(f"Error in process_tournament_move: {str(e)}")
-
-# Tournament endpoints
 @app.route('/api/tournament/start', methods=['POST'])
 def start_tournament():
     try:
@@ -389,7 +285,6 @@ def stop_tournament():
         logging.error(f"Error in stop_tournament: {str(e)}")
         return jsonify({'error': str(e)}), 400
 
-# Game endpoints
 @app.route('/api/game/start', methods=['POST', 'OPTIONS'])
 def start_game():
     if request.method == 'OPTIONS':
@@ -416,11 +311,6 @@ def start_game():
     except Exception as e:
         logger.error(f"Error in start_game: {str(e)}")
         return jsonify({'error': str(e)}), 400
-
-# Add this helper function to convert board to FEN (Forsyth–Edwards Notation)
-def get_board_fen():
-    global board
-    return board.fen() if board else None
 
 @app.route('/api/game/state', methods=['GET'])
 def get_game_state():
@@ -523,7 +413,6 @@ def stop_game():
         logging.error(f"Error in stop_game: {str(e)}")
         return jsonify({'error': str(e)}), 400
 
-# Add leaderboard endpoint
 @app.route('/api/leaderboard', methods=['GET', 'OPTIONS'])
 def get_leaderboard():
     if request.method == 'OPTIONS':
@@ -545,7 +434,27 @@ def get_leaderboard():
         logging.error(f"Error in get_leaderboard: {str(e)}")
         return jsonify({'error': str(e)}), 400
 
-# Update handle_game_over to update leaderboard
+def start_new_game(white_ai=None, black_ai=None):
+    global board, game_state
+    try:
+        logger.info("Initializing new game state...")
+        board = chess.Board()
+        game_state = {
+            'status': 'active',
+            'currentPlayer': 'white',
+            'whiteAI': white_ai,
+            'blackAI': black_ai,
+            'winner': None,
+            'isCheck': False,
+            'isCheckmate': False,
+            'isStalemate': False
+        }
+        logger.info("Game state initialized successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Error in start_new_game: {str(e)}")
+        return False
+
 def handle_game_over(winner):
     global tournament_state, leaderboard
     if tournament_state['active']:
@@ -570,7 +479,6 @@ def handle_game_over(winner):
         else:
             tournament_state['active'] = False
 
-# Add this AI move function at the top with other functions
 def get_ai_move(ai_name, current_board):
     try:
         legal_moves = list(current_board.legal_moves)
@@ -582,10 +490,9 @@ def get_ai_move(ai_name, current_board):
         return random.choice(legal_moves)
         
     except Exception as e:
-        logging.error(f"Error in get_ai_move: {str(e)}")
+        logger.error(f"Error in get_ai_move: {str(e)}")
         return None
 
-# Add this after the other game endpoints
 @app.route('/api/game/ai-move', methods=['POST', 'OPTIONS'])
 def request_ai_move():
     if request.method == 'OPTIONS':
@@ -645,6 +552,27 @@ def request_ai_move():
     except Exception as e:
         logging.error(f"Error in request_ai_move: {str(e)}")
         return jsonify({'error': str(e)}), 400
+
+def get_next_ai_move(board, ai_name):
+    try:
+        if board is None:
+            logger.error("Board is None in get_next_ai_move")
+            return None
+            
+        if board.is_game_over():
+            return None
+            
+        legal_moves = list(board.legal_moves)
+        if not legal_moves:
+            return None
+            
+        # Use the improved AI logic we added earlier
+        best_move = get_ai_move(ai_name, board)
+        return best_move if best_move else random.choice(legal_moves)
+        
+    except Exception as e:
+        logger.error(f"Error getting AI move: {str(e)}")
+        return None
 
 if __name__ == '__main__':
     socketio.run(app,

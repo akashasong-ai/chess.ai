@@ -1,19 +1,19 @@
 from flask import Flask
+from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
 
-# Create Flask app
-flask_app = Flask(__name__)
+app = Flask(__name__)
+CORS(app)
 
-# Import game state first
-from .flask_app import board, game_state, tournament_state, leaderboard
+# Configure SQLAlchemy
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chess.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Then import FastAPI app
-from .main import app
+# Initialize SQLAlchemy
+db = SQLAlchemy(app)
 
-__all__ = [
-    'app',
-    'flask_app',
-    'board',
-    'game_state',
-    'tournament_state',
-    'leaderboard'
-]
+# Import routes after app initialization to avoid circular imports
+from backend.app import routes, models, flask_app
+
+# Register blueprints
+app.register_blueprint(routes.main)
