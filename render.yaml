@@ -5,8 +5,6 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn 'backend.app.flask_app:app' --bind=0.0.0.0:$PORT
     envVars:
-      - key: PERPLEXITY_API_KEY
-        value: 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
       - key: PYTHON_VERSION
         value: 3.11.11
 
@@ -14,6 +12,3 @@ services:
     name: chess-ai-frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
-    envVars:
-      - key: PERPLEXITY_API_KEY
-        value: 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
