@@ -25,9 +25,12 @@ def get_ai_config(player_id: str) -> Dict[str, str]:
     """Get AI configuration by player ID."""
     for player in AI_PLAYERS:
         if player['id'] == player_id:
+            api_key = API_KEYS[player['api_type']]
+            if not api_key:
+                raise ValueError(f"Missing API key for {player['api_type']}")
             return {
                 'api_type': player['api_type'],
-                'api_key': API_KEYS[player['api_type']],
+                'api_key': api_key,
                 'model': player['model']
             }
     raise ValueError(f"Unknown AI player ID: {player_id}")
