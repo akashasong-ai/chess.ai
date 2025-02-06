@@ -29,10 +29,11 @@ game_state: Dict[str, Any] = {
 app = Flask(__name__, static_folder='../frontend/dist', static_url_path='/')
 CORS(app, resources={
     r"/*": {
-        "origins": "*",
+        "origins": ["http://localhost:5173"],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"],
-        "supports_credentials": False
+        "supports_credentials": False,
+        "expose_headers": ["Content-Type"]
     }
 })
 
@@ -331,17 +332,22 @@ def start_tournament():
         current_match = matches[0]
         start_new_game(current_match['white'], current_match['black'])
         
+        tournament_status = {
+            'currentMatch': 1,
+            'totalMatches': len(matches),
+            'matches': matches,
+            'currentGame': {
+                'white': current_match['white'],
+                'black': current_match['black']
+            }
+        }
+        
+        # Emit tournament update through WebSocket
+        socketio.emit('tournamentUpdate', tournament_status)
+        
         return jsonify({
             'success': True,
-            'tournamentStatus': {
-                'currentMatch': 1,
-                'totalMatches': len(matches),
-                'matches': matches,
-                'currentGame': {
-                    'white': current_match['white'],
-                    'black': current_match['black']
-                }
-            }
+            'tournamentStatus': tournament_status
         })
         
     except Exception as e:

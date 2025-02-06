@@ -34,11 +34,11 @@ describe('GameTypeSelect', () => {
 });
 
 describe('PlayerSelect', () => {
-  it('prevents selecting same AI for both players', () => {
+  it('prevents selecting same AI for both players in both directions', () => {
     const onSelectPlayer1 = vi.fn();
     const onSelectPlayer2 = vi.fn();
     
-    renderWithProvider(
+    const { rerender } = renderWithProvider(
       <PlayerSelect
         gameType="chess"
         onSelectPlayer1={onSelectPlayer1}
@@ -48,10 +48,25 @@ describe('PlayerSelect', () => {
       />
     );
 
+    // Check Player 2 can't select GPT-4
     const player2Select = screen.getByRole('combobox', { name: 'Player 2 (Black)' });
-    const gpt4Option = within(player2Select).getByRole('option', { name: 'GPT-4' });
-    expect(player2Select).toBeInTheDocument();
-    expect(gpt4Option).toBeDisabled();
+    const gpt4OptionInPlayer2 = within(player2Select).getByRole('option', { name: 'GPT-4' });
+    expect(gpt4OptionInPlayer2).toBeDisabled();
+
+    // Check Player 1 can't select CLAUDE when Player 2 has it
+    rerender(
+      <PlayerSelect
+        gameType="chess"
+        onSelectPlayer1={onSelectPlayer1}
+        onSelectPlayer2={onSelectPlayer2}
+        selectedPlayer1=""
+        selectedPlayer2="claude"
+      />
+    );
+
+    const player1Select = screen.getByRole('combobox', { name: 'Player 1 (White)' });
+    const claudeOptionInPlayer1 = within(player1Select).getByRole('option', { name: 'CLAUDE' });
+    expect(claudeOptionInPlayer1).toBeDisabled();
   });
 
   it('shows correct player colors based on game type', () => {
