@@ -3,24 +3,34 @@ import styles from './Leaderboard.module.css';
 import type { LeaderboardEntry } from '../../types/leaderboard';
 import { gameSocket } from '../../services/socket';
 
-export const Leaderboard: React.FC = () => {
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export interface LeaderboardProps {
+  leaderboard: LeaderboardEntry[];
+  gameType: 'chess' | 'go';
+}
+
+export const Leaderboard: React.FC<LeaderboardProps> = ({ leaderboard, gameType }) => {
+  const [localLeaderboard, setLocalLeaderboard] = useState<LeaderboardEntry[]>(leaderboard);
+  const [isLoading, setIsLoading] = useState(leaderboard.length === 0);
+
+  useEffect(() => {
+    setLocalLeaderboard(leaderboard);
+    setIsLoading(leaderboard.length === 0);
+  }, [leaderboard]);
 
   useEffect(() => {
     const unsubscribe = gameSocket.onLeaderboardUpdate((data) => {
-      setLeaderboard(data);
+      setLocalLeaderboard(data);
       setIsLoading(false);
     });
 
-    // Initial fetch
-    gameSocket.emit('getLeaderboard');
+    if (leaderboard.length === 0) {
+      gameSocket.emit('getLeaderboard');
+    }
 
     return () => {
       unsubscribe();
-      gameSocket.emit('leaveGame');
     };
-  }, []);
+  }, [gameType]);
 
   if (isLoading) {
     return <div className={styles.loading}>Loading leaderboard...</div>;
@@ -41,7 +51,7 @@ export const Leaderboard: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {leaderboard.map((entry) => (
+          {localLeaderboard.map((entry) => (
             <tr key={entry.player} className={styles.row}>
               <td>{entry.player}</td>
               <td>{entry.score}</td>

@@ -3,14 +3,29 @@ import type { ChessGameState } from '../types/chess';
 import type { GoGameState, GoGameUpdate } from '../types/go';
 import type { LeaderboardEntry } from '../types/leaderboard';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://go-board-app-tunnel-mp5ybwn7.devinapps.com';
+const SOCKET_URL = 'http://localhost:5000';
 
 type GameState = ChessGameState | GoGameState;
+
+interface TournamentStatus {
+  currentMatch: number;
+  totalMatches: number;
+  matches: Array<{
+    white: string;
+    black: string;
+    result: string | null;
+  }>;
+  currentGame: {
+    white: string;
+    black: string;
+  };
+}
 
 interface SocketEvents {
   // Server -> Client events
   gameUpdate: (state: GameState) => void;
   leaderboardUpdate: (data: LeaderboardEntry[]) => void;
+  tournamentUpdate: (data: TournamentStatus) => void;
   // Client -> Server events
   move: (data: { from?: string; to?: string; x?: number; y?: number; gameId: string }) => void;
   joinGame: (gameId: string) => void;
@@ -66,6 +81,11 @@ class GameSocket {
   onLeaderboardUpdate(callback: (data: LeaderboardEntry[]) => void) {
     this.socket.on('leaderboardUpdate', callback);
     return () => this.socket.off('leaderboardUpdate', callback);
+  }
+
+  onTournamentUpdate(callback: (data: TournamentStatus) => void) {
+    this.socket.on('tournamentUpdate', callback);
+    return () => this.socket.off('tournamentUpdate', callback);
   }
 
   emit(event: keyof SocketEvents, data?: any) {

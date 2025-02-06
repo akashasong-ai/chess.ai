@@ -38,7 +38,7 @@ class Match:
             self.board_size = 19
 
 class Tournament:
-    def __init__(self, game_type: Literal['chess', 'go'], players: List[str], 
+    def __init__(self, game_type: str, players: List[str], 
                  num_games: int = 1, time_control: int = 600):  # Default 10 minutes per player
         self.game_type = game_type
         self.players = players

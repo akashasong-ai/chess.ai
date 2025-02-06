@@ -1,56 +1,70 @@
 import PropTypes from 'prop-types';
-import './styles.css';
+import styles from './PlayerSelect.module.css';
 
-const PlayerSelect = ({ aiOptions, onSelectPlayer1, onSelectPlayer2, gameType }) => {
-    return (
-        <div className="player-select">
-            <h2>Select Players for {gameType.toUpperCase()}</h2>
-            
-            <div className="player-options">
-                <div className="player-column">
-                    <h3>Player 1 ({gameType === 'chess' ? 'White' : 'Black'})</h3>
-                    <div className="ai-options">
-                        {aiOptions.map(ai => (
-                            <button
-                                key={ai.id}
-                                className="ai-option"
-                                onClick={() => onSelectPlayer1(ai)}
-                            >
-                                {ai.name}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+const AI_PLAYERS = [
+  { id: 'gpt4', name: 'GPT-4' },
+  { id: 'claude', name: 'CLAUDE' },
+  { id: 'gemini', name: 'GEMINI' },
+  { id: 'perplexity', name: 'PERPLEXITY' }
+];
 
-                <div className="player-column">
-                    <h3>Player 2 ({gameType === 'chess' ? 'Black' : 'White'})</h3>
-                    <div className="ai-options">
-                        {aiOptions.map(ai => (
-                            <button
-                                key={ai.id}
-                                className="ai-option"
-                                onClick={() => onSelectPlayer2(ai)}
-                            >
-                                {ai.name}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </div>
+const PlayerSelect = ({ gameType, onSelectPlayer1, onSelectPlayer2, selectedPlayer1, selectedPlayer2 }) => {
+  return (
+    <div className={styles.playerSelect}>
+      <h2 className={styles.title}>Select Players</h2>
+      <div className={styles.playerColumns}>
+        <div className={styles.playerColumn}>
+          <h3>Player 1 ({gameType === 'chess' ? 'White' : 'Black'})</h3>
+          <select 
+            value={selectedPlayer1} 
+            onChange={(e) => onSelectPlayer1(e.target.value)}
+            className={styles.select}
+            aria-label={`Player 1 (${gameType === 'chess' ? 'White' : 'Black'})`}
+          >
+            <option value="">Select AI</option>
+            {AI_PLAYERS.map(ai => (
+              <option 
+                key={ai.id} 
+                value={ai.id}
+                disabled={ai.id === selectedPlayer2}
+              >
+                {ai.name}
+              </option>
+            ))}
+          </select>
         </div>
-    );
+
+        <div className={styles.playerColumn}>
+          <h3>Player 2 ({gameType === 'chess' ? 'Black' : 'White'})</h3>
+          <select 
+            value={selectedPlayer2} 
+            onChange={(e) => onSelectPlayer2(e.target.value)}
+            className={styles.select}
+            aria-label={`Player 2 (${gameType === 'chess' ? 'Black' : 'White'})`}
+          >
+            <option value="">Select AI</option>
+            {AI_PLAYERS.map(ai => (
+              <option 
+                key={ai.id} 
+                value={ai.id}
+                disabled={ai.id === selectedPlayer1}
+              >
+                {ai.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 PlayerSelect.propTypes = {
-  aiOptions: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired
-    })
-  ).isRequired,
+  gameType: PropTypes.oneOf(['chess', 'go']).isRequired,
   onSelectPlayer1: PropTypes.func.isRequired,
   onSelectPlayer2: PropTypes.func.isRequired,
-  gameType: PropTypes.oneOf(['chess', 'go']).isRequired
+  selectedPlayer1: PropTypes.string.isRequired,
+  selectedPlayer2: PropTypes.string.isRequired
 };
 
 export default PlayerSelect;
