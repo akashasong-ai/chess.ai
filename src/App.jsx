@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { gameSocket } from './services/socket';
 import { ChessBoard } from './components/GameBoard/ChessBoard';
 import GoBoard from './components/GameBoard/GoBoard.tsx';
 import GameTypeSelect from './components/GameControls/GameTypeSelect';
@@ -15,11 +16,22 @@ function App() {
   const [player2, setPlayer2] = useState('');
   const [error, setError] = useState('');
   const [gameState, setGameState] = useState({ status: 'inactive' });
+  const [connectionStatus, setConnectionStatus] = useState('connecting');
 
   const handleError = (err) => {
     setError(err.message);
     setTimeout(() => setError(''), 5000);
   };
+
+  useEffect(() => {
+    const handleConnectionStatus = (status) => {
+      setConnectionStatus(status);
+    };
+    gameSocket.socket.on('connectionStatus', handleConnectionStatus);
+    return () => {
+      gameSocket.socket.off('connectionStatus', handleConnectionStatus);
+    };
+  }, []);
 
   return (
     <div className={styles.container}>
@@ -27,7 +39,7 @@ function App() {
       <GameTypeSelect onSelect={setGameType} data-testid="game-type-select" />
       <div className={styles.gameContainer}>
         <Leaderboard leaderboard={leaderboard} gameType={gameType} />
-        <StatusBar error={error} isGameActive={gameState?.status === 'active'} />
+        <StatusBar error={error} isGameActive={gameState?.status === 'active'} connectionStatus={connectionStatus} />
         <PlayerSelect 
           gameType={gameType}
           onSelectPlayer1={setPlayer1}
