@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
 import styles from './StatusBar.module.css';
+import React from 'react';
+
+interface StatusBarProps {
+  error?: string;
+}
 
 const STATUS_MESSAGES = [
   'AI players analyzing positions...',
@@ -11,7 +16,7 @@ const STATUS_MESSAGES = [
   'Computing next move...'
 ];
 
-export const StatusBar = ({ error }: { error?: string }) => {
+export const StatusBar: React.FC<StatusBarProps> = ({ error }) => {
   const [messageIndex, setMessageIndex] = useState(0);
 
   useEffect(() => {

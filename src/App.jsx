@@ -5,6 +5,7 @@ import GameTypeSelect from './components/GameControls/GameTypeSelect';
 import PlayerSelect from './components/GameControls/PlayerSelect';
 import Leaderboard from './components/Leaderboard';
 import StatusBar from './components/StatusBar';
+import Tournament from './components/Tournament';
 import styles from './App.module.css';
 
 function App() {
@@ -22,7 +23,7 @@ function App() {
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>AI Game Arena</h1>
-      <GameTypeSelect onSelect={setGameType} />
+      <GameTypeSelect onSelect={setGameType} data-testid="game-type-select" />
       <div className={styles.gameContainer}>
         <Leaderboard leaderboard={leaderboard} gameType={gameType} />
         <StatusBar error={error} />
@@ -35,12 +36,15 @@ function App() {
         />
         <div className={styles.board}>
           {gameType === 'chess' ? (
-            <ChessBoard 
-              setLeaderboard={setLeaderboard} 
-              onError={handleError}
-              player1={player1}
-              player2={player2}
-            />
+            <>
+              <ChessBoard 
+                setLeaderboard={setLeaderboard} 
+                onError={handleError}
+                player1={player1}
+                player2={player2}
+              />
+              <Tournament gameType={gameType} onError={handleError} />
+            </>
           ) : (
             <GoBoard 
               setLeaderboard={setLeaderboard}

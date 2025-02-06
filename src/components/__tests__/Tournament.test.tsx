@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { Tournament } from '../Tournament/Tournament';
 
 describe('Tournament', () => {
@@ -7,14 +7,22 @@ describe('Tournament', () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({
-        matches: [
-          {
-            id: '1',
-            player1: 'gpt4',
-            player2: 'claude',
-            status: 'pending'
+        success: true,
+        tournamentStatus: {
+          currentMatch: 1,
+          totalMatches: 6,
+          matches: [
+            {
+              white: 'gpt4',
+              black: 'claude',
+              result: null
+            }
+          ],
+          currentGame: {
+            white: 'gpt4',
+            black: 'claude'
           }
-        ]
+        }
       })
     });
     vi.stubGlobal('fetch', mockFetch);
@@ -25,8 +33,22 @@ describe('Tournament', () => {
     fireEvent.click(startButton);
 
     expect(startButton).toBeDisabled();
-    expect(await screen.findByText('GPT-4')).toBeInTheDocument();
-    expect(await screen.findByText('CLAUDE')).toBeInTheDocument();
+    const matchStatus = await screen.findByText('Match 1 of 6');
+    expect(matchStatus).toBeInTheDocument();
+    
+    const currentMatch = await screen.findByText('Current Match');
+    expect(currentMatch).toBeInTheDocument();
+    
+    const currentMatchDiv = screen.getByRole('heading', { name: 'Current Match' }).parentElement;
+    expect(currentMatchDiv).toHaveTextContent('GPT-4');
+    expect(currentMatchDiv).toHaveTextContent('vs');
+    expect(currentMatchDiv).toHaveTextContent('CLAUDE');
+    
+    const matchCard = screen.getByTestId('match-card');
+    expect(matchCard).toHaveTextContent('GPT-4');
+    expect(matchCard).toHaveTextContent('vs');
+    expect(matchCard).toHaveTextContent('CLAUDE');
+    expect(matchCard).toHaveTextContent('Pending');
   });
 
   it('shows error state when tournament fails to start', async () => {
@@ -36,7 +58,9 @@ describe('Tournament', () => {
     render(<Tournament gameType="chess" />);
     
     const startButton = screen.getByText('Start Round Robin Tournament');
-    fireEvent.click(startButton);
+    await act(async () => {
+      fireEvent.click(startButton);
+    });
 
     expect(startButton).not.toBeDisabled();
   });

@@ -1,13 +1,12 @@
 .leaderboard {
   width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
+  margin: 2rem auto 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1.5rem;
+  padding: 1rem;
   background: #fff;
-  border-radius: 8px;
+  border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   color: #1a1a1a;
   text-align: center;
@@ -62,4 +61,4 @@
 
 .row:nth-child(3) td:first-child {
   color: #b45309;
-}                                                                                                                                                                                                                                                  
+}                                                                                                                                                                                                                                                                                                                                                                                                                    

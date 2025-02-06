@@ -10,6 +10,7 @@ vi.mock('../services/socket', () => ({
   gameSocket: {
     emit: vi.fn(),
     onLeaderboardUpdate: vi.fn(() => vi.fn()),
+    onTournamentUpdate: vi.fn(() => vi.fn()),
   }
 }));
 
