@@ -1,9 +1,10 @@
 import chess
 import openai
 import anthropic
+import httpx
 import google.generativeai as generativeai
 from typing import Dict, Any
-from config import get_ai_config
+from .config import get_ai_config
 from openings import get_opening_move, evaluate_position
 
 class LLMInterface:
@@ -20,6 +21,12 @@ class LLMInterface:
         elif self.api_type == 'google':
             generativeai.configure(api_key=config['api_key'])
             self.client = generativeai.GenerativeModel(self.model)
+        elif self.api_type == 'perplexity':
+            self.client = httpx.Client(
+                base_url="https://api.perplexity.ai",
+                headers={"Authorization": f"Bearer {config['api_key']}"},
+                timeout=10.0
+            )
         else:
             raise ValueError(f"Unsupported API type: {self.api_type}")
 
@@ -93,6 +100,18 @@ Explain your strategic thinking, then provide ONLY the move notation on the last
                 response = await self.client.generate_content(prompt)
                 move = response.text.strip()
             
+            elif self.api_type == 'perplexity':
+                response = await self.client.post(
+                    "/chat/completions",
+                    json={
+                        "model": self.model,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "max_tokens": 100,
+                        "temperature": 0.7
+                    }
+                )
+                move = response.json()['choices'][0]['message']['content'].strip()
+            
             # Extract move from response (last line)
             move_lines = move.strip().split('\n')
             final_move = move_lines[-1].strip()
@@ -113,4 +132,4 @@ Explain your strategic thinking, then provide ONLY the move notation on the last
         except Exception as e:
             print(f"Error generating move with {self.api_type}: {str(e)}")
             # Return a default move in case of error (e2e4)
-            return "e2e4"         
+            return "e2e4"                                                      
