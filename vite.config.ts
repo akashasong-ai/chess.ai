@@ -5,11 +5,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://localhost:5001',
+      '/api': 'https://ai-arena-backend.onrender.com',
       '/socket.io': {
-        target: 'http://localhost:5001',
+        target: 'https://ai-arena-backend.onrender.com',
         ws: true
       }
     }
   }
-})   
+})      
