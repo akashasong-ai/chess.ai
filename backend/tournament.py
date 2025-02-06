@@ -3,7 +3,7 @@ import time
 from chess_engine import ChessGame
 from go_board import GoBoard
 
-from typing import List, Dict, Optional, Literal, TypedDict, Union
+from typing import List, Dict, Optional, TypedDict, Union
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import random
@@ -20,7 +20,7 @@ class MoveResult(TypedDict, total=False):
 class Match:
     player1: str
     player2: str
-    game_type: Literal['chess', 'go']
+    game_type: str  # 'chess' or 'go'
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     winner: Optional[str] = None
@@ -252,7 +252,7 @@ class Tournament:
                 return match
         return None
 
-    def update_rankings(self, match: Match, result: Literal['win', 'draw', 'loss']):
+    def update_rankings(self, match: Match, result: str):
         """Update rankings based on match result."""
         if result == 'win':
             self.rankings[match.player1]['wins'] += 1
