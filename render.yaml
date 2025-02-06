@@ -3,7 +3,7 @@ services:
     name: chess-ai-backend
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind=0.0.0.0:$PORT
+    startCommand: gunicorn app:app --worker-class eventlet --bind=0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.11
@@ -11,6 +11,16 @@ services:
         value: production
       - key: CORS_ORIGIN
         value: https://chess-ai-frontend.onrender.com
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: chess-game-state
+          property: connectionString
+
+  - type: redis
+    name: chess-game-state
+    ipAllowList:
+      - source: 0.0.0.0/0
 
   - type: static
     name: chess-ai-frontend
