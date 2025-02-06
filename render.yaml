@@ -2,15 +2,22 @@ services:
   - type: web
     name: chess-ai-backend
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: cd /opt/render/project/src && PYTHONPATH=/opt/render/project/src gunicorn 'backend.app.flask_app:app' --bind=0.0.0.0:$PORT --log-level debug
+    buildCommand: pip install -e .
+    startCommand: cd /opt/render/project/src && PYTHONPATH=/opt/render/project/src gunicorn 'backend.app.flask_app:app' --bind=0.0.0.0:$PORT --workers=4 --timeout=120 --log-level debug
     envVars:
       - key: PYTHONPATH
         value: /opt/render/project/src
+      - key: FLASK_ENV
+        value: production
       - key: PYTHON_VERSION
         value: 3.11.11
+      - key: FLASK_APP
+        value: backend.app.flask_app:app
 
   - type: static
     name: chess-ai-frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://chess-ai-backend.onrender.com

@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
-from app.models import LLM, Game
-from app.game_logic import ChessGame
-from app import db
+from backend.app.models import LLM, Game
+from backend.app.game_logic import ChessGame
+from backend.app import db
 
 main = Blueprint('main', __name__)
 
@@ -79,4 +79,4 @@ def get_game(game_id):
         'result': game.result,
         'started_at': game.started_at.isoformat(),
         'ended_at': game.ended_at.isoformat() if game.ended_at else None
-    }) 
+    })  
