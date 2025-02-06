@@ -3,7 +3,7 @@ import styles from './Leaderboard.module.css';
 import type { LeaderboardEntry } from '../../types/leaderboard';
 import { gameSocket } from '../../services/socket';
 
-interface LeaderboardProps {
+export interface LeaderboardProps {
   leaderboard: LeaderboardEntry[];
   gameType: 'chess' | 'go';
 }
