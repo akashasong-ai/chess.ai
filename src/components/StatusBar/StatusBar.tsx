@@ -5,6 +5,7 @@ import React from 'react';
 interface StatusBarProps {
   error?: string;
   isGameActive?: boolean;
+  connectionStatus?: 'connected' | 'connecting' | 'disconnected';
 }
 
 const STATUS_MESSAGES = [
@@ -17,7 +18,7 @@ const STATUS_MESSAGES = [
   'Computing next move...'
 ];
 
-export const StatusBar: React.FC<StatusBarProps> = ({ error, isGameActive }) => {
+export const StatusBar: React.FC<StatusBarProps> = ({ error, isGameActive, connectionStatus = 'connecting' }) => {
   const [messageIndex, setMessageIndex] = useState(0);
 
   useEffect(() => {
@@ -31,7 +32,10 @@ export const StatusBar: React.FC<StatusBarProps> = ({ error, isGameActive }) => 
 
   return (
     <div className={styles.statusBar}>
-      {error || (isGameActive ? STATUS_MESSAGES[messageIndex] : 'Waiting to start game...')}
+      {error || 
+       (connectionStatus === 'disconnected' ? 'Network error - trying to reconnect...' :
+        connectionStatus === 'connecting' ? 'Connecting to game server...' :
+        isGameActive ? STATUS_MESSAGES[messageIndex] : 'Waiting to start game...')}
     </div>
   );
 };

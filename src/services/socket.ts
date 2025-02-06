@@ -3,7 +3,7 @@ import type { ChessGameState } from '../types/chess';
 import type { GoGameState, GoGameUpdate } from '../types/go';
 import type { LeaderboardEntry } from '../types/leaderboard';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://ai-arena-backend.onrender.com';
 
 type GameState = ChessGameState | GoGameState;
 
@@ -27,6 +27,7 @@ interface SocketEvents {
   leaderboardUpdate: (data: LeaderboardEntry[]) => void;
   tournamentUpdate: (data: TournamentStatus) => void;
   validMoves: (moves: string[]) => void;
+  connectionStatus: (status: 'connected' | 'connecting' | 'disconnected') => void;
   // Client -> Server events
   'move': (data: { from?: string; to?: string; x?: number; y?: number; gameId: string }) => void;
   'getValidMoves': (data: { position: string; gameId: string }) => void;
@@ -62,18 +63,24 @@ class GameSocket {
     // Add connection event handlers
     this.socket.on('connect', () => {
       console.log('Connected to game server');
+      this.emit('connectionStatus', 'connected');
     });
 
     this.socket.on('connect_error', (error: Error) => {
       console.error('Connection error:', error);
+      this.emit('connectionStatus', 'disconnected');
       retryCount++;
       
       if (retryCount <= maxRetries) {
-        // Try polling if WebSocket fails
-        if (this.socket.io?.opts?.transports?.includes('websocket')) {
-          console.log('Falling back to polling transport');
-          this.socket.io.opts.transports = ['polling'];
-        }
+        console.log(`Retrying connection (${retryCount}/${maxRetries})`);
+        const backoffDelay = Math.min(1000 * Math.pow(2, retryCount - 1), 10000);
+        setTimeout(() => {
+          if (this.socket.io?.opts?.transports?.includes('websocket')) {
+            console.log('Falling back to polling transport');
+            this.socket.io.opts.transports = ['polling'];
+          }
+          this.socket.connect();
+        }, backoffDelay);
       } else {
         console.error('Max reconnection attempts reached');
         this.socket.disconnect();

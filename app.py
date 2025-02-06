@@ -35,12 +35,15 @@ CORS(app, resources={
 # Initialize Socket.IO with Redis and eventlet
 socketio = SocketIO(
     app,
-    cors_allowed_origins="*",
+    cors_allowed_origins=[
+        "https://ai-arena-frontend.onrender.com",
+        "http://localhost:5173"
+    ],
     message_queue=os.getenv('REDIS_URL', 'redis://localhost:6379'),
     async_mode='eventlet',
     logger=True,
     engineio_logger=True,
-    ping_timeout=60000,
+    ping_timeout=20000,
     ping_interval=25000,
     allow_credentials=False,
     transports=['websocket', 'polling']
