@@ -1,1 +1,7 @@
-# This file can be empty - it marks the directory as a Python package 
+"""
+Chess.ai backend package
+"""
+from backend.app import app
+from backend.app.flask_app import socketio
+
+__all__ = ['app', 'socketio']
