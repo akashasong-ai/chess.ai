@@ -3,7 +3,7 @@ import type { ChessGameState } from '../types/chess';
 import type { GoGameState, GoGameUpdate } from '../types/go';
 import type { LeaderboardEntry } from '../types/leaderboard';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
 type GameState = ChessGameState | GoGameState;
 

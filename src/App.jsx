@@ -14,6 +14,7 @@ function App() {
   const [player1, setPlayer1] = useState('');
   const [player2, setPlayer2] = useState('');
   const [error, setError] = useState('');
+  const [gameState, setGameState] = useState({ status: 'inactive' });
 
   const handleError = (err) => {
     setError(err.message);
@@ -26,7 +27,7 @@ function App() {
       <GameTypeSelect onSelect={setGameType} data-testid="game-type-select" />
       <div className={styles.gameContainer}>
         <Leaderboard leaderboard={leaderboard} gameType={gameType} />
-        <StatusBar error={error} />
+        <StatusBar error={error} isGameActive={gameState?.status === 'active'} />
         <PlayerSelect 
           gameType={gameType}
           onSelectPlayer1={setPlayer1}
@@ -42,6 +43,7 @@ function App() {
                 onError={handleError}
                 player1={player1}
                 player2={player2}
+                onGameStateChange={setGameState}
               />
               <Tournament gameType={gameType} onError={handleError} />
             </>
@@ -51,6 +53,7 @@ function App() {
               onError={handleError}
               player1={player1}
               player2={player2}
+              onGameStateChange={setGameState}
             />
           )}
         </div>
