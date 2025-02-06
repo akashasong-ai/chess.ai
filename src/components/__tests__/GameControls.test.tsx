@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import gameReducer from '../../store/gameSlice';
@@ -48,8 +48,9 @@ describe('PlayerSelect', () => {
       />
     );
 
-    screen.getByLabelText('Player 2 (Black)');
-    const gpt4Option = screen.getByRole('option', { name: 'GPT-4' });
+    const player2Select = screen.getByRole('combobox', { name: 'Player 2 (Black)' });
+    const gpt4Option = within(player2Select).getByRole('option', { name: 'GPT-4' });
+    expect(player2Select).toBeInTheDocument();
     expect(gpt4Option).toBeDisabled();
   });
 
