@@ -9,14 +9,16 @@ load_dotenv()
 AI_PLAYERS: List[Dict[str, str]] = [
     {'id': 'gpt4', 'name': 'GPT-4', 'api_type': 'openai', 'model': 'gpt-4'},
     {'id': 'claude2', 'name': 'Claude 2', 'api_type': 'anthropic', 'model': 'claude-2'},
-    {'id': 'gemini', 'name': 'Gemini Pro', 'api_type': 'google', 'model': 'gemini-pro'}
+    {'id': 'gemini', 'name': 'Gemini Pro', 'api_type': 'google', 'model': 'gemini-pro'},
+    {'id': 'perplexity', 'name': 'Perplexity', 'api_type': 'perplexity', 'model': 'deepseek-coder-33b-instruct'}
 ]
 
 # API Configuration
 API_KEYS = {
     'openai': os.getenv('OPENAI_API_KEY'),
     'anthropic': os.getenv('ANTHROPIC_API_KEY'),
-    'google': os.getenv('GOOGLE_API_KEY')
+    'google': os.getenv('GOOGLE_API_KEY'),
+    'perplexity': os.getenv('PERPLEXITY_API_KEY')
 }
 
 def get_ai_config(player_id: str) -> Dict[str, str]:
