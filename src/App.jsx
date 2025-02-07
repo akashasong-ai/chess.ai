@@ -24,6 +24,7 @@ function App() {
   };
 
   useEffect(() => {
+    setGameState({ status: 'inactive' });
     const handleConnectionStatus = (status) => {
       setConnectionStatus(status);
     };
