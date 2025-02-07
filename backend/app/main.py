@@ -30,8 +30,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Import Flask app after FastAPI app is created
-from app import app as flask_app
+# Import Flask app and Redis functions after FastAPI app is created
+from app import app as flask_app, get_game_state_from_redis
 
 # Store active WebSocket connections
 active_connections: Dict[str, WebSocket] = {}
@@ -105,8 +105,6 @@ async def websocket_endpoint(websocket: WebSocket, path: str):
         
         # Send initial game state if available
         try:
-            # Get latest game state from Redis
-            from app import get_game_state_from_redis
             game_state = get_game_state_from_redis("current")  # Default game ID
             if game_state and isinstance(game_state, dict):
                 await websocket.send_json({
