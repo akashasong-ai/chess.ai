@@ -10,7 +10,7 @@ services:
       - key: FLASK_ENV
         value: production
       - key: CORS_ORIGIN
-        value: https://chess-ai-frontend.onrender.com
+        value: https://ai-arena-frontend.onrender.com
       - key: REDIS_URL
         fromService:
           type: redis
@@ -28,6 +28,6 @@ services:
     staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
-        value: https://chess-ai-backend.onrender.com
+        value: https://ai-arena-backend.onrender.com
       - key: VITE_SOCKET_URL
-        value: https://chess-ai-backend.onrender.com
+        value: https://ai-arena-backend.onrender.com

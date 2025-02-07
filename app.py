@@ -43,9 +43,9 @@ socketio = SocketIO(
     async_mode='eventlet',
     logger=True,
     engineio_logger=True,
-    ping_timeout=20000,
-    ping_interval=25000,
-    allow_credentials=False,
+    ping_timeout=10000,
+    ping_interval=15000,
+    allow_credentials=True,
     transports=['websocket', 'polling']
 )
 
