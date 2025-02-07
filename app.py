@@ -25,10 +25,11 @@ logger = logging.getLogger(__name__)
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app, resources={
-    r"/api/*": {
-        "origins": "*",
+    r"/*": {
+        "origins": ["https://ai-arena-frontend.onrender.com", "http://localhost:5173"],
         "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
+        "allow_headers": ["Content-Type"],
+        "supports_credentials": True
     }
 })
 
