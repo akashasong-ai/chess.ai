@@ -60,59 +60,108 @@ CORS(app,
 # Initialize Socket.IO with Redis and eventlet
 socketio = SocketIO(
     app,
-    cors_allowed_origins=CORS_ORIGIN,
-    message_queue=REDIS_URL,
+    cors_allowed_origins=[
+        os.getenv('CORS_ORIGIN', 'https://ai-arena-frontend.onrender.com'),
+        'http://localhost:5173',  # Vite dev server
+        'http://127.0.0.1:5173'
+    ],
+    message_queue=REDIS_URL if os.getenv('FLASK_ENV') == 'production' else None,
     async_mode='gevent',
     logger=True,
     engineio_logger=True,
     ping_timeout=PING_TIMEOUT,
     ping_interval=PING_INTERVAL,
     allow_credentials=True,
-    transports=['websocket', 'polling']  # Support both for better reliability
+    transports=['websocket', 'polling']
 )
 
-# Initialize Redis client
-redis_client = Redis.from_url(os.getenv('REDIS_URL', 'redis://localhost:6379'))
+# Initialize Redis connection with error handling
+try:
+    redis_client = Redis.from_url(REDIS_URL)
+    redis_client.ping()  # Test connection
+    logger.info("Redis connection successful")
+except Exception as e:
+    logger.error(f"Redis connection failed: {e}")
+    redis_client = None
+    # Continue without Redis in development
+    if os.getenv('FLASK_ENV') == 'production':
+        raise
 
 def get_game_state_from_redis(game_id: str) -> Dict[str, Any]:
     """Get game state from Redis"""
-    state = redis_client.get(f'game:{game_id}')
-    return json.loads(state) if state else {
+    default_state = {
         'status': 'inactive',
         'currentPlayer': 'white',
         'whiteAI': None,
         'blackAI': None,
         'winner': None
     }
+    if redis_client is None:
+        logger.warning("Redis not available, using in-memory state")
+        return default_state
+    try:
+        state = redis_client.get(f'game:{game_id}')
+        return json.loads(state) if state else default_state
+    except Exception as e:
+        logger.error(f"Error getting game state from Redis: {e}")
+        return default_state
 
 def set_game_state(game_id: str, state: Dict[str, Any]) -> None:
     """Save game state to Redis"""
-    redis_client.set(f'game:{game_id}', json.dumps(state))
+    if redis_client is None:
+        logger.warning("Redis not available, state will not persist")
+        return
+    try:
+        redis_client.set(f'game:{game_id}', json.dumps(state))
+    except Exception as e:
+        logger.error(f"Error saving game state to Redis: {e}")
 
 def get_tournament_state() -> Dict[str, Any]:
     """Get tournament state from Redis"""
-    state = redis_client.get('tournament')
-    return json.loads(state) if state else {
+    default_state = {
         'active': False,
         'matches': [],
         'current_match': 0,
         'results': {},
         'participants': []
     }
+    if redis_client is None:
+        logger.warning("Redis not available, using in-memory state")
+        return default_state
+    try:
+        state = redis_client.get('tournament')
+        return json.loads(state) if state else default_state
+    except Exception as e:
+        logger.error(f"Error getting tournament state from Redis: {e}")
+        return default_state
 
 def set_tournament_state(state: Dict[str, Any]) -> None:
     """Save tournament state to Redis"""
-    redis_client.set('tournament', json.dumps(state))
+    if redis_client is None:
+        logger.warning("Redis not available, state will not persist")
+        return
+    try:
+        redis_client.set('tournament', json.dumps(state))
+    except Exception as e:
+        logger.error(f"Error saving tournament state to Redis: {e}")
 
 def get_leaderboard() -> Dict[str, Dict[str, int]]:
     """Get leaderboard from Redis"""
-    board = redis_client.get('leaderboard')
-    return json.loads(board) if board else {
+    default_board = {
         'GPT-4': {'wins': 5, 'losses': 2, 'draws': 1},
         'Claude 2': {'wins': 4, 'losses': 3, 'draws': 1},
         'Gemini Pro': {'wins': 3, 'losses': 4, 'draws': 0},
         'Perplexity': {'wins': 2, 'losses': 5, 'draws': 2}
     }
+    if redis_client is None:
+        logger.warning("Redis not available, using default leaderboard")
+        return default_board
+    try:
+        board = redis_client.get('leaderboard')
+        return json.loads(board) if board else default_board
+    except Exception as e:
+        logger.error(f"Error getting leaderboard from Redis: {e}")
+        return default_board
 
 @app.route('/api/game/start', methods=['POST', 'OPTIONS'])
 @validate_request(['whiteAI', 'blackAI'])
@@ -464,16 +513,21 @@ def handle_move(data):
                                 leaderboard[winner_ai]['wins'] += 1
                             if loser_ai in leaderboard:
                                 leaderboard[loser_ai]['losses'] += 1
-                            redis_client.set('leaderboard', json.dumps(leaderboard))
-                        except Exception as leaderboard_error:
-                            logger.error(f"Error updating leaderboard: {str(leaderboard_error)}")
-                            # Continue even if leaderboard update fails
+                            if redis_client is not None:
+                                try:
+                                    redis_client.set('leaderboard', json.dumps(leaderboard))
+                                except Exception as leaderboard_error:
+                                    logger.error(f"Error updating leaderboard: {str(leaderboard_error)}")
+                            else:
+                                logger.warning("Redis not available, leaderboard will not persist")
+                        except Exception as e:
+                            logger.error(f"Error updating game outcome: {str(e)}")
                 
                 # Save game state
                 try:
                     set_game_state(game_id, state)
-                except Exception as save_error:
-                    logger.error(f"Error saving game state: {str(save_error)}")
+                except Exception as e:
+                    logger.error(f"Error saving game state: {str(e)}")
                     emit('error', {'message': 'Failed to save game state'})
                     return
 
