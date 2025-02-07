@@ -41,6 +41,7 @@ interface SocketEvents {
   tournamentUpdate: (data: TournamentStatus) => void;
   validMoves: (moves: string[]) => void;
   connectionStatus: (status: 'connected' | 'connecting' | 'disconnected') => void;
+  error: (data: { message: string }) => void;
   // Client -> Server events
   'move': (data: { from?: string; to?: string; x?: number; y?: number; gameId: string }) => void;
   'getValidMoves': (data: { position: string; gameId: string }) => void;
@@ -96,6 +97,7 @@ class GameSocket {
         }, backoffDelay);
       } else {
         console.error('Max reconnection attempts reached');
+        this.emit('error', { message: 'Connection failed after multiple attempts. Please refresh the page or try again later.' });
         this.socket.disconnect();
       }
     });
