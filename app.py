@@ -25,10 +25,11 @@ logger = logging.getLogger(__name__)
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app, resources={
-    r"/api/*": {
-        "origins": "*",
+    r"/*": {
+        "origins": ["https://ai-arena-frontend.onrender.com", "http://localhost:5173"],
         "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
+        "allow_headers": ["Content-Type"],
+        "supports_credentials": True
     }
 })
 
@@ -43,9 +44,9 @@ socketio = SocketIO(
     async_mode='eventlet',
     logger=True,
     engineio_logger=True,
-    ping_timeout=20000,
+    ping_timeout=300000,  # 5 minutes to match Render.com free tier timeout
     ping_interval=25000,
-    allow_credentials=False,
+    allow_credentials=True,
     transports=['websocket', 'polling']
 )
 
