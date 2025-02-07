@@ -31,19 +31,19 @@ def validate_request(required_fields: Optional[List[str]] = None):
         return decorated_function
     return decorator
 
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
 # Environment variables
 CORS_ORIGIN = os.getenv('CORS_ORIGIN', 'https://ai-arena-frontend.onrender.com')
-REDIS_URL = os.getenv('REDIS_URL')
+REDIS_URL = os.getenv('REDIS_URL', '')
 if not REDIS_URL and os.getenv('FLASK_ENV') != 'production':
     REDIS_URL = 'redis://localhost:6379'
     logger.warning("No Redis URL provided, using localhost for development")
 PORT = int(os.environ.get('PORT', 5000))
 PING_TIMEOUT = 300000  # 5 minutes to match Render.com free tier
 PING_INTERVAL = 25000
-
-# Set up logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -81,14 +81,18 @@ socketio = SocketIO(
 )
 
 # Initialize Redis connection with error handling
+redis_client = None
 try:
-    redis_client = Redis.from_url(REDIS_URL)
-    redis_client.ping()  # Test connection
-    logger.info("Redis connection successful")
+    if REDIS_URL:
+        redis_client = Redis.from_url(REDIS_URL)
+        redis_client.ping()  # Test connection
+        logger.info("Redis connection successful")
+    elif os.getenv('FLASK_ENV') == 'production':
+        raise ValueError("Redis URL is required in production")
+    else:
+        logger.warning("No Redis URL provided, using in-memory state for development")
 except Exception as e:
     logger.error(f"Redis connection failed: {e}")
-    redis_client = None
-    # Continue without Redis in development
     if os.getenv('FLASK_ENV') == 'production':
         raise
 
