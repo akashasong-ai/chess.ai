@@ -37,7 +37,7 @@ CORS(app,
     },
     supports_credentials=True
 )
-# Socket.IO implementation moved to flask_app.py
+# Socket.IO implementation moved to app.py
 
 # Initialize game storage
 chess_games = {}
@@ -119,7 +119,7 @@ def get_leaderboard(game_type):
     else:
         return jsonify(go_leaderboard.get_rankings())
 
-# Socket.IO event handlers moved to flask_app.py
+# Socket.IO event handlers moved to app.py
 
 if __name__ == '__main__':
     app.run(

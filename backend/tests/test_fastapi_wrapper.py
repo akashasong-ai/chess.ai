@@ -7,7 +7,7 @@ from pathlib import Path
 from httpx import ASGITransport
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from app.main import app
-from app import app as flask_app
+from app import app as flask_app, get_game_state_from_redis
 
 @pytest_asyncio.fixture(autouse=True)
 async def reset_game_state():
