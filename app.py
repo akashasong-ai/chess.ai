@@ -33,7 +33,8 @@ def validate_request(required_fields: Optional[List[str]] = None):
 
 # Environment variables
 CORS_ORIGIN = os.getenv('CORS_ORIGIN', 'https://ai-arena-frontend.onrender.com')
-REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
+REDIS_URL = os.getenv('REDIS_URL')
+REDIS_ENABLED = bool(REDIS_URL and os.getenv('FLASK_ENV') == 'production')
 PORT = int(os.environ.get('PORT', 5000))
 PING_TIMEOUT = 300000  # 5 minutes to match Render.com free tier
 PING_INTERVAL = 25000
@@ -53,41 +54,40 @@ CORS(app,
         "supports_credentials": True,
         "send_wildcard": False,
         "max_age": 86400
-    }},
-    allow_credentials=True
+    }}
 )
 
-# Initialize Socket.IO with Redis and eventlet
+# Initialize Socket.IO with Redis and gevent
 socketio = SocketIO(
     app,
     cors_allowed_origins=[
-        os.getenv('CORS_ORIGIN', 'https://ai-arena-frontend.onrender.com'),
-        'http://localhost:5173',  # Vite dev server
-        'http://127.0.0.1:5173'
+        os.getenv('CORS_ORIGIN', 'https://ai-arena-frontend.onrender.com')
     ],
-    message_queue=REDIS_URL if os.getenv('FLASK_ENV') == 'production' else None,
+    message_queue=REDIS_URL if REDIS_ENABLED else None,
     async_mode='gevent',
     logger=True,
     engineio_logger=True,
-    ping_timeout=20000,
-    ping_interval=10000,
+    ping_timeout=300000,  # 5 minutes for Render free tier
+    ping_interval=25000,
     allow_upgrades=True,
     transports=['polling', 'websocket'],
-    always_connect=True,
-    allow_credentials=True
+    always_connect=True
 )
 
 # Initialize Redis connection with error handling
 try:
-    redis_client = Redis.from_url(REDIS_URL)
-    redis_client.ping()  # Test connection
-    logger.info("Redis connection successful")
+    if REDIS_ENABLED and REDIS_URL:
+        redis_client = Redis.from_url(REDIS_URL)
+        redis_client.ping()  # Test connection
+        logger.info("Redis connection successful")
+    else:
+        redis_client = None
+        logger.info("Redis disabled, using in-memory state management")
 except Exception as e:
     logger.error(f"Redis connection failed: {e}")
-    redis_client = None
-    # Continue without Redis in development
     if os.getenv('FLASK_ENV') == 'production':
         raise
+    redis_client = None
 
 def get_game_state_from_redis(game_id: str) -> Dict[str, Any]:
     """Get game state from Redis"""

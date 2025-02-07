@@ -1,4 +1,10 @@
 services:
+  - type: redis
+    name: chess-game-state
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: Allow connections from all IPs
+
   - type: web
     name: chess-ai-backend
     env: python
@@ -16,11 +22,6 @@ services:
           type: redis
           name: chess-game-state
           property: connectionString
-
-  - type: redis
-    name: chess-game-state
-    ipAllowList:
-      - source: 0.0.0.0/0
 
   - type: static
     name: chess-ai-frontend
