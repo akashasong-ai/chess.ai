@@ -40,7 +40,7 @@ export const Tournament = ({ gameType }: { gameType: 'chess' | 'go' }) => {
   const startTournament = async () => {
     try {
       setIsRunning(true);
-      const response = await fetch('http://localhost:5000/api/tournament/start', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tournament/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

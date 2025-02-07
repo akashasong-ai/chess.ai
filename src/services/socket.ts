@@ -3,12 +3,16 @@ import type { ChessGameState } from '../types/chess';
 import type { GoGameState, GoGameUpdate } from '../types/go';
 import type { LeaderboardEntry } from '../types/leaderboard';
 
-if (!import.meta.env.VITE_SOCKET_URL) {
-  console.error('VITE_SOCKET_URL environment variable is not set');
-}
-
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://chess-ai-backend.onrender.com';
+const SOCKET_URL = 'https://ai-arena-backend.onrender.com';
 console.log('Using WebSocket URL:', SOCKET_URL);
+
+// Configure Socket.IO to use WebSocket transport
+const socketOptions = {
+  transports: ['websocket'],
+  path: '/socket.io',
+  secure: true,
+  rejectUnauthorized: false
+};
 
 type GameState = ChessGameState | GoGameState;
 
@@ -47,7 +51,7 @@ class GameSocket {
   constructor() {
     console.log('Initializing socket connection to:', SOCKET_URL);
     this.socket = io(SOCKET_URL, {
-      transports: ['websocket', 'polling'],
+      ...socketOptions,
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
