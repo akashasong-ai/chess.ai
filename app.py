@@ -10,7 +10,7 @@ from itertools import combinations
 from functools import wraps
 
 import chess
-import eventlet
+from gevent import monkey; monkey.patch_all()
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
@@ -38,9 +38,6 @@ PORT = int(os.environ.get('PORT', 5000))
 PING_TIMEOUT = 300000  # 5 minutes to match Render.com free tier
 PING_INTERVAL = 25000
 
-# Initialize eventlet for async support
-eventlet.monkey_patch()
-
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -56,12 +53,12 @@ CORS(app, resources={
     }
 })
 
-# Initialize Socket.IO with Redis and eventlet
+# Initialize Socket.IO with Redis and gevent
 socketio = SocketIO(
     app,
     cors_allowed_origins=CORS_ORIGIN,
     message_queue=REDIS_URL,
-    async_mode='eventlet',
+    async_mode='gevent',
     logger=True,
     engineio_logger=True,
     ping_timeout=PING_TIMEOUT,
@@ -508,4 +505,4 @@ def handle_move(data):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    socketio.run(app, host='0.0.0.0', port=port, use_reloader=False, log_output=True)
+    socketio.run(app, host='0.0.0.0', port=port, use_reloader=False, log_output=True, server_class='gevent')
