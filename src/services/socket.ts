@@ -49,16 +49,11 @@ class GameSocket {
     this.socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionAttempts: Infinity,
+      reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      randomizationFactor: 0.5,
-      path: '/socket.io/',
-      auth: {
-        credentials: 'omit'
-      },
+      timeout: 10000,
       autoConnect: true,
-      timeout: 20000,
       forceNew: true
     });
 
@@ -79,11 +74,16 @@ class GameSocket {
       if (retryCount <= maxRetries) {
         console.log(`Retrying connection (${retryCount}/${maxRetries})`);
         const backoffDelay = Math.min(1000 * Math.pow(2, retryCount - 1), 10000);
+        
+        // Try polling if WebSocket fails
+        if (this.socket.io?.opts?.transports?.includes('websocket')) {
+          console.log('Falling back to polling transport');
+          this.socket.io.opts.transports = ['polling'];
+        }
+        
+        // Attempt reconnection with exponential backoff
         setTimeout(() => {
-          if (this.socket.io?.opts?.transports?.includes('websocket')) {
-            console.log('Falling back to polling transport');
-            this.socket.io.opts.transports = ['polling'];
-          }
+          console.log(`Attempting reconnection after ${backoffDelay}ms delay`);
           this.socket.connect();
         }, backoffDelay);
       } else {
