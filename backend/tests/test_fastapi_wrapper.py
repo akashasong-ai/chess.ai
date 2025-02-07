@@ -7,7 +7,7 @@ from pathlib import Path
 from httpx import ASGITransport
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from app.main import app
-from app.flask_app import app as flask_app, board, game_state, tournament_state
+from app import app as flask_app
 
 @pytest_asyncio.fixture(autouse=True)
 async def reset_game_state():

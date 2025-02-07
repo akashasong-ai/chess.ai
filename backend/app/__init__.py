@@ -13,7 +13,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # Import routes after app initialization to avoid circular imports
-from backend.app import routes, models, flask_app
+from backend.app import routes, models
 
 # Register blueprints
 app.register_blueprint(routes.main)

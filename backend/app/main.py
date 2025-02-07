@@ -12,31 +12,6 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Create FastAPI app first
-app = FastAPI(title="Chess AI Game")
-
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-        "https://*.devinapps.com"
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Import Flask app after FastAPI app is created
-from .flask_app import app as flask_app, board, game_state, tournament_state, leaderboard
-
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
 # Create FastAPI app
 app = FastAPI(title="Chess AI Game")
 
@@ -54,6 +29,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Import Flask app and Redis functions after FastAPI app is created
+from app import app as flask_app, get_game_state_from_redis
 
 # Store active WebSocket connections
 active_connections: Dict[str, WebSocket] = {}
@@ -126,14 +104,15 @@ async def websocket_endpoint(websocket: WebSocket, path: str):
         active_connections[client_id] = websocket
         
         # Send initial game state if available
-        if game_state and isinstance(game_state, dict):
-            try:
+        try:
+            game_state = get_game_state_from_redis("current")  # Default game ID
+            if game_state and isinstance(game_state, dict):
                 await websocket.send_json({
                     "type": "gameUpdate",
                     "data": game_state
                 })
-            except Exception as e:
-                logger.error(f"Error sending initial game state: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error sending initial game state: {str(e)}")
             
         # Listen for messages
         while True:
@@ -152,6 +131,8 @@ async def websocket_endpoint(websocket: WebSocket, path: str):
                             )
                             if response.status_code == 200:
                                 # Broadcast successful move to all clients
+                                # Get latest game state from Redis
+                                game_state = get_game_state_from_redis("current")  # Default game ID
                                 if game_state and isinstance(game_state, dict):
                                     for conn in active_connections.values():
                                         try:
