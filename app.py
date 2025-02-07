@@ -36,10 +36,7 @@ CORS(app, resources={
 # Initialize Socket.IO with Redis and eventlet
 socketio = SocketIO(
     app,
-    cors_allowed_origins=[
-        "https://ai-arena-frontend.onrender.com",
-        "http://localhost:5173"
-    ],
+    cors_allowed_origins="https://ai-arena-frontend.onrender.com",
     message_queue=os.getenv('REDIS_URL', 'redis://localhost:6379'),
     async_mode='eventlet',
     logger=True,
@@ -384,4 +381,5 @@ def handle_move(data):
         emit('error', {'message': 'Internal server error'})
 
 if __name__ == '__main__':
-    socketio.run(app, port=5001, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(app, host='0.0.0.0', port=port, server='eventlet')
