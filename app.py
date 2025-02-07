@@ -33,7 +33,10 @@ def validate_request(required_fields: Optional[List[str]] = None):
 
 # Environment variables
 CORS_ORIGIN = os.getenv('CORS_ORIGIN', 'https://ai-arena-frontend.onrender.com')
-REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
+REDIS_URL = os.getenv('REDIS_URL')
+if not REDIS_URL and os.getenv('FLASK_ENV') != 'production':
+    REDIS_URL = 'redis://localhost:6379'
+    logger.warning("No Redis URL provided, using localhost for development")
 PORT = int(os.environ.get('PORT', 5000))
 PING_TIMEOUT = 300000  # 5 minutes to match Render.com free tier
 PING_INTERVAL = 25000
@@ -72,7 +75,9 @@ socketio = SocketIO(
     ping_timeout=PING_TIMEOUT,
     ping_interval=PING_INTERVAL,
     allow_credentials=True,
-    transports=['websocket', 'polling']
+    transports=['polling', 'websocket'],  # Start with polling, upgrade to websocket
+    always_connect=True,  # Ensure connection attempts are made
+    max_http_buffer_size=1e8  # Increase buffer size for large payloads
 )
 
 # Initialize Redis connection with error handling

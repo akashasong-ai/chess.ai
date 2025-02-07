@@ -6,13 +6,16 @@ import type { LeaderboardEntry } from '../types/leaderboard';
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://ai-arena-backend.onrender.com';
 console.log('Using WebSocket URL:', SOCKET_URL);
 
-// Configure Socket.IO to use WebSocket transport
+// Configure Socket.IO with improved transport and reconnection settings
 const socketOptions = {
-  transports: ['websocket', 'polling'],
+  transports: ['polling', 'websocket'],  // Start with polling, upgrade to websocket
   path: '/socket.io',
   secure: true,
   rejectUnauthorized: false,
-  withCredentials: true
+  withCredentials: true,
+  timeout: 20000,  // Increase timeout for slow connections
+  reconnectionDelayMax: 10000,  // Maximum delay between reconnection attempts
+  reconnectionAttempts: 5  // Increase max reconnection attempts
 };
 
 type GameState = ChessGameState | GoGameState;
