@@ -12,31 +12,6 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Create FastAPI app first
-app = FastAPI(title="Chess AI Game")
-
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-        "https://*.devinapps.com"
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Import Flask app after FastAPI app is created
-from app import app as flask_app
-
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
 # Create FastAPI app
 app = FastAPI(title="Chess AI Game")
 
@@ -54,6 +29,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Import Flask app after FastAPI app is created
+from app import app as flask_app
 
 # Store active WebSocket connections
 active_connections: Dict[str, WebSocket] = {}
