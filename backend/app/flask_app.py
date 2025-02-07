@@ -27,14 +27,14 @@ game_state: Dict[str, Any] = {
 
 # Initialize Socket.IO
 socketio = SocketIO(app,
-    cors_allowed_origins="*",
-    async_mode='threading',
+    cors_allowed_origins=["https://ai-arena-frontend.onrender.com", "http://localhost:5173"],
+    async_mode='eventlet',
     logger=True,
     engineio_logger=True,
     ping_timeout=60000,
     ping_interval=25000,
-    allow_credentials=False,
-    transports=['polling', 'websocket']
+    allow_credentials=True,
+    transports=['websocket']
 )
 
 # Initialize global variables
@@ -192,8 +192,14 @@ def get_game_state_update(game_id: str, game_type: str = 'chess') -> Optional[di
         logger.error(f"Error getting game state: {str(e)}")
     return None
 
-@app.route('/api/tournament/start', methods=['POST'])
+@app.route('/api/tournament/start', methods=['POST', 'OPTIONS'])
 def start_tournament():
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        return response, 200
+        
     try:
         global tournament_state, board, game_state
         data = request.get_json()
@@ -288,7 +294,10 @@ def stop_tournament():
 @app.route('/api/game/start', methods=['POST', 'OPTIONS'])
 def start_game():
     if request.method == 'OPTIONS':
-        return '', 200
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        return response, 200
         
     try:
         logger.info("Starting new game...")
@@ -416,7 +425,10 @@ def stop_game():
 @app.route('/api/leaderboard', methods=['GET', 'OPTIONS'])
 def get_leaderboard():
     if request.method == 'OPTIONS':
-        return '', 200
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        return response, 200
         
     try:
         return jsonify([
@@ -576,7 +588,7 @@ def get_next_ai_move(board, ai_name):
 
 if __name__ == '__main__':
     socketio.run(app,
-        host='127.0.0.1',
+        host='0.0.0.0',
         port=5001,
         debug=True,
         use_reloader=True,
