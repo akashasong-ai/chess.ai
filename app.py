@@ -5,8 +5,9 @@ import logging
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, List, Callable
 from itertools import combinations
+from functools import wraps
 
 import chess
 import eventlet
@@ -14,6 +15,28 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 from redis import Redis
+
+def validate_request(required_fields: Optional[List[str]] = None):
+    def decorator(f: Callable):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if request.method == 'OPTIONS':
+                return '', 200
+            if required_fields and request.is_json:
+                data = request.get_json()
+                missing = [field for field in required_fields if not data.get(field)]
+                if missing:
+                    return jsonify({'error': f'Missing required fields: {", ".join(missing)}'}), 400
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+# Environment variables
+CORS_ORIGIN = os.getenv('CORS_ORIGIN', 'https://ai-arena-frontend.onrender.com')
+REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
+PORT = int(os.environ.get('PORT', 5000))
+PING_TIMEOUT = 300000  # 5 minutes to match Render.com free tier
+PING_INTERVAL = 25000
 
 # Initialize eventlet for async support
 eventlet.monkey_patch()
@@ -26,7 +49,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app, resources={
     r"/*": {
-        "origins": ["https://ai-arena-frontend.onrender.com", "http://localhost:5173"],
+        "origins": [os.getenv('CORS_ORIGIN', 'https://ai-arena-frontend.onrender.com')],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"],
         "supports_credentials": True
@@ -36,21 +59,21 @@ CORS(app, resources={
 # Initialize Socket.IO with Redis and eventlet
 socketio = SocketIO(
     app,
-    cors_allowed_origins="https://ai-arena-frontend.onrender.com",
-    message_queue=os.getenv('REDIS_URL', 'redis://localhost:6379'),
+    cors_allowed_origins=CORS_ORIGIN,
+    message_queue=REDIS_URL,
     async_mode='eventlet',
     logger=True,
     engineio_logger=True,
-    ping_timeout=300000,  # 5 minutes to match Render.com free tier timeout
-    ping_interval=25000,
+    ping_timeout=PING_TIMEOUT,
+    ping_interval=PING_INTERVAL,
     allow_credentials=True,
-    transports=['websocket', 'polling']
+    transports=['websocket', 'polling']  # Support both for better reliability
 )
 
 # Initialize Redis client
 redis_client = Redis.from_url(os.getenv('REDIS_URL', 'redis://localhost:6379'))
 
-def get_game_state(game_id: str) -> Dict[str, Any]:
+def get_game_state_from_redis(game_id: str) -> Dict[str, Any]:
     """Get game state from Redis"""
     state = redis_client.get(f'game:{game_id}')
     return json.loads(state) if state else {
@@ -91,15 +114,20 @@ def get_leaderboard() -> Dict[str, Dict[str, int]]:
     }
 
 @app.route('/api/game/start', methods=['POST', 'OPTIONS'])
+@validate_request(['whiteAI', 'blackAI'])
 def start_game():
-    if request.method == 'OPTIONS':
-        return '', 200
         
     try:
         logger.info("Starting new game...")
         data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Missing request data'}), 400
+            
         white_ai = data.get('whiteAI')
         black_ai = data.get('blackAI')
+        if not white_ai or not black_ai:
+            return jsonify({'error': 'Missing required fields: whiteAI and blackAI'}), 400
+            
         logger.info(f"Selected players - White: {white_ai}, Black: {black_ai}")
         
         game_id = str(random.randint(1000, 9999))
@@ -120,14 +148,15 @@ def start_game():
         logger.error(f"Error in start_game: {str(e)}")
         return jsonify({'error': str(e)}), 400
 
-@app.route('/api/game/state', methods=['GET'])
-def get_game_state():
+@app.route('/api/game/state', methods=['GET', 'OPTIONS'])
+@validate_request(['gameId'])
+def get_game_state_route():
     try:
         game_id = request.args.get('gameId')
         if not game_id:
             return jsonify({'error': 'No game ID provided'}), 400
             
-        state = get_game_state(game_id)
+        state = get_game_state_from_redis(game_id)
         if not state:
             return jsonify({'error': 'No active game found'}), 400
             
@@ -158,10 +187,11 @@ def get_game_state():
             }
         })
     except Exception as e:
-        logging.error(f"Error in get_game_state: {str(e)}")
+        logging.error(f"Error in get_game_state_route: {str(e)}")
         return jsonify({'error': str(e)}), 400
 
-@app.route('/api/game/move', methods=['POST'])
+@app.route('/api/game/move', methods=['POST', 'OPTIONS'])
+@validate_request(['gameId', 'move'])
 def make_move():
     try:
         data = request.get_json()
@@ -173,7 +203,7 @@ def make_move():
         if not move:
             return jsonify({'error': 'No move provided'}), 400
             
-        state = get_game_state(game_id)
+        state = get_game_state_from_redis(game_id)
         if not state:
             return jsonify({'error': 'No active game found'}), 400
             
@@ -210,7 +240,8 @@ def make_move():
         logger.error(f"Error in make_move: {str(e)}")
         return jsonify({'error': str(e)}), 400
 
-@app.route('/api/game/stop', methods=['POST'])
+@app.route('/api/game/stop', methods=['POST', 'OPTIONS'])
+@validate_request(['gameId'])
 def stop_game():
     try:
         data = request.get_json()
@@ -239,9 +270,8 @@ def stop_game():
         return jsonify({'error': str(e)}), 400
 
 @app.route('/api/leaderboard', methods=['GET', 'OPTIONS'])
+@validate_request()
 def get_leaderboard_route():
-    if request.method == 'OPTIONS':
-        return '', 200
         
     try:
         board = get_leaderboard()
@@ -261,35 +291,78 @@ def get_leaderboard_route():
         return jsonify({'error': str(e)}), 400
 
 # Socket.IO event handlers
+@socketio.on_error_default
+def default_error_handler(e):
+    logger.error(f"WebSocket error: {str(e)}")
+    emit('error', {'message': 'Internal server error'})
+
 @socketio.on('connect')
 def handle_connect():
     """Handle client connection"""
-    logger.info('Client connected')
-    emit('connected', {'status': 'success'})
+    try:
+        logger.info('Client connected')
+        emit('connected', {'status': 'success'})
+    except Exception as e:
+        logger.error(f"Connection error: {str(e)}")
+        return False  # Reject connection on error
+
+@socketio.on('connect_error')
+def handle_connect_error(error):
+    """Handle connection errors"""
+    logger.error(f"Connection error: {str(error)}")
+    emit('error', {'message': 'Connection failed'})
 
 @socketio.on('disconnect')
 def handle_disconnect():
     """Handle client disconnection"""
-    logger.info('Client disconnected')
+    try:
+        logger.info('Client disconnected')
+    except Exception as e:
+        logger.error(f"Disconnect error: {str(e)}")
+        emit('error', {'message': 'Error during disconnect'})
 
 @socketio.on('joinGame')
 def handle_join_game(data):
     """Handle client joining a game"""
     try:
+        # Validate input data
+        if not data:
+            logger.error("No data provided for joinGame")
+            emit('error', {'message': 'No game data provided'})
+            return
+
         if not isinstance(data, dict):
             game_id = str(data)  # Handle case where only game_id is sent
             game_type = 'chess'  # Default to chess
         else:
             game_id = str(data.get('gameId'))
+            if not game_id:
+                logger.error("No game ID provided")
+                emit('error', {'message': 'Game ID is required'})
+                return
             game_type = data.get('gameType', 'chess')
 
-        logger.info(f'Client joined {game_type} game {game_id}')
+        logger.info(f'Client joining {game_type} game {game_id}')
         
-        state = get_game_state(game_id)
-        if state:
+        # Get game state with error handling
+        try:
+            state = get_game_state_from_redis(game_id)
+        except Exception as redis_error:
+            logger.error(f"Redis error while getting game state: {str(redis_error)}")
+            emit('error', {'message': 'Failed to retrieve game state'})
+            return
+
+        if not state:
+            logger.error(f"Game {game_id} not found")
+            emit('error', {'message': f'Game {game_id} not found'})
+            return
+
+        # Set up game board with error handling
+        try:
             board = chess.Board(state.get('board', chess.STARTING_FEN))
             board_array = [[str(board.piece_at(chess.square(col, row))) if board.piece_at(chess.square(col, row)) else ' '
                           for col in range(8)] for row in range(7, -1, -1)]
+            
             emit('gameUpdate', {
                 'board': board_array,
                 'currentPlayer': state['currentPlayer'],
@@ -297,56 +370,91 @@ def handle_join_game(data):
                 'winner': state.get('winner'),
                 'gameType': game_type
             })
-        else:
-            logger.error(f"Game {game_id} not found")
-            emit('error', {'message': f'Game {game_id} not found'})
+            logger.info(f'Successfully joined game {game_id}')
+        except Exception as chess_error:
+            logger.error(f"Chess error while setting up board: {str(chess_error)}")
+            emit('error', {'message': 'Failed to set up game board'})
+            return
+
     except Exception as e:
         logger.error(f"Error in handle_join_game: {str(e)}")
-        emit('error', {'message': str(e)})
+        emit('error', {'message': 'Internal server error while joining game'})
 
 @socketio.on('leaveGame')
 def handle_leave_game():
-    logger.info('Client left game')
+    """Handle client leaving a game"""
+    try:
+        logger.info('Client left game')
+    except Exception as e:
+        logger.error(f"Error in handle_leave_game: {str(e)}")
+        emit('error', {'message': 'Error leaving game'})
 
 @socketio.on('move')
 def handle_move(data):
     """Handle game moves for both chess and go games"""
     try:
+        # Validate input data
+        if not isinstance(data, dict):
+            logger.error("Invalid move data format")
+            emit('error', {'message': 'Invalid move data format'})
+            return
+
         game_id = str(data.get('gameId', ''))
         move = data.get('move', {})
         game_type = data.get('gameType', 'chess')
 
         if not game_id:
             logger.error("No game_id provided")
-            emit('error', {'message': 'No game_id provided'})
+            emit('error', {'message': 'Game ID is required'})
             return
 
-        state = get_game_state(game_id)
+        # Get game state with error handling
+        try:
+            state = get_game_state_from_redis(game_id)
+        except Exception as redis_error:
+            logger.error(f"Redis error while getting game state: {str(redis_error)}")
+            emit('error', {'message': 'Failed to retrieve game state'})
+            return
+
         if not state:
             logger.error(f"{game_type.capitalize()} game {game_id} not found")
             emit('error', {'message': f'Game {game_id} not found'})
             return
 
         if game_type == 'chess':
-            if not move or 'from' not in move or 'to' not in move:
+            # Validate chess move format
+            if not isinstance(move, dict) or 'from' not in move or 'to' not in move:
                 logger.error("Invalid chess move format")
-                emit('error', {'message': 'Invalid move format'})
+                emit('error', {'message': 'Invalid move format - requires "from" and "to" positions'})
                 return
 
-            board = chess.Board(state.get('board', chess.STARTING_FEN))
             try:
+                board = chess.Board(state.get('board', chess.STARTING_FEN))
+            except Exception as board_error:
+                logger.error(f"Error creating chess board: {str(board_error)}")
+                emit('error', {'message': 'Failed to set up game board'})
+                return
+
+            try:
+                # Validate and make move
                 chess_move = chess.Move.from_uci(f"{move['from']}{move['to']}")
-                if chess_move in board.legal_moves:
-                    board.push(chess_move)
-                    state['currentPlayer'] = 'black' if state['currentPlayer'] == 'white' else 'white'
-                    state['board'] = board.fen()
-                    
-                    if board.is_game_over():
-                        state['status'] = 'finished'
-                        if board.is_checkmate():
-                            winner = 'black' if state['currentPlayer'] == 'white' else 'white'
-                            state['winner'] = state['whiteAI'] if winner == 'white' else state['blackAI']
-                            
+                if chess_move not in board.legal_moves:
+                    emit('error', {'message': 'Invalid move - not a legal chess move'})
+                    return
+
+                # Make the move
+                board.push(chess_move)
+                state['currentPlayer'] = 'black' if state['currentPlayer'] == 'white' else 'white'
+                state['board'] = board.fen()
+                
+                # Check game over conditions
+                if board.is_game_over():
+                    state['status'] = 'finished'
+                    if board.is_checkmate():
+                        winner = 'black' if state['currentPlayer'] == 'white' else 'white'
+                        state['winner'] = state['whiteAI'] if winner == 'white' else state['blackAI']
+                        
+                        try:
                             # Update leaderboard
                             leaderboard = get_leaderboard()
                             winner_ai = state['whiteAI'] if winner == 'white' else state['blackAI']
@@ -356,8 +464,20 @@ def handle_move(data):
                             if loser_ai in leaderboard:
                                 leaderboard[loser_ai]['losses'] += 1
                             redis_client.set('leaderboard', json.dumps(leaderboard))
-                    
+                        except Exception as leaderboard_error:
+                            logger.error(f"Error updating leaderboard: {str(leaderboard_error)}")
+                            # Continue even if leaderboard update fails
+                
+                # Save game state
+                try:
                     set_game_state(game_id, state)
+                except Exception as save_error:
+                    logger.error(f"Error saving game state: {str(save_error)}")
+                    emit('error', {'message': 'Failed to save game state'})
+                    return
+
+                # Prepare and send game update
+                try:
                     game_update = {
                         'board': [[str(board.piece_at(chess.square(col, row))) if board.piece_at(chess.square(col, row)) else ' '
                                 for col in range(8)] for row in range(7, -1, -1)],
@@ -366,20 +486,26 @@ def handle_move(data):
                         'winner': state.get('winner'),
                         'gameType': 'chess'
                     }
-                    socketio.emit('gameUpdate', game_update, broadcast=True)
+                    socketio.emit('gameUpdate', game_update, to=None)
                     
                     if state['status'] == 'finished':
-                        socketio.emit('leaderboardUpdate', get_leaderboard(), broadcast=True)
-                else:
-                    emit('error', {'message': 'Invalid move'})
+                        socketio.emit('leaderboardUpdate', get_leaderboard(), to=None)
+                except Exception as emit_error:
+                    logger.error(f"Error emitting game update: {str(emit_error)}")
+                    emit('error', {'message': 'Failed to send game update'})
+                    return
+
             except ValueError as ve:
-                logger.error(f"Invalid chess move: {str(ve)}")
-                emit('error', {'message': 'Invalid move format'})
+                logger.error(f"Invalid chess move format: {str(ve)}")
+                emit('error', {'message': 'Invalid move format - must be valid chess notation'})
+            except Exception as chess_error:
+                logger.error(f"Chess error: {str(chess_error)}")
+                emit('error', {'message': 'Error processing chess move'})
 
     except Exception as e:
         logger.error(f"Error in handle_move: {str(e)}")
-        emit('error', {'message': 'Internal server error'})
+        emit('error', {'message': 'Internal server error while processing move'})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    socketio.run(app, host='0.0.0.0', port=port, server='eventlet')
+    socketio.run(app, host='0.0.0.0', port=port, use_reloader=False, log_output=True)

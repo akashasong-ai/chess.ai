@@ -31,7 +31,7 @@ app.add_middleware(
 )
 
 # Import Flask app after FastAPI app is created
-from .flask_app import app as flask_app, board, game_state, tournament_state, leaderboard
+from app import app as flask_app
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -126,14 +126,17 @@ async def websocket_endpoint(websocket: WebSocket, path: str):
         active_connections[client_id] = websocket
         
         # Send initial game state if available
-        if game_state and isinstance(game_state, dict):
-            try:
+        try:
+            # Get latest game state from Redis
+            from app import get_game_state_from_redis
+            game_state = get_game_state_from_redis("current")  # Default game ID
+            if game_state and isinstance(game_state, dict):
                 await websocket.send_json({
                     "type": "gameUpdate",
                     "data": game_state
                 })
-            except Exception as e:
-                logger.error(f"Error sending initial game state: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error sending initial game state: {str(e)}")
             
         # Listen for messages
         while True:
@@ -152,6 +155,8 @@ async def websocket_endpoint(websocket: WebSocket, path: str):
                             )
                             if response.status_code == 200:
                                 # Broadcast successful move to all clients
+                                # Get latest game state from Redis
+                                game_state = get_game_state_from_redis("current")  # Default game ID
                                 if game_state and isinstance(game_state, dict):
                                     for conn in active_connections.values():
                                         try:
