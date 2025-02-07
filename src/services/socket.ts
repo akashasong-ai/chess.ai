@@ -3,16 +3,19 @@ import type { ChessGameState } from '../types/chess';
 import type { GoGameState, GoGameUpdate } from '../types/go';
 import type { LeaderboardEntry } from '../types/leaderboard';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://ai-arena-backend.onrender.com';
+const SOCKET_URL = (import.meta.env.VITE_SOCKET_URL || 'https://ai-arena-backend.onrender.com').replace('http://', 'wss://').replace('https://', 'wss://');
 console.log('Using WebSocket URL:', SOCKET_URL);
 
-// Configure Socket.IO to use WebSocket transport
+// Configure Socket.IO with optimized transport strategy
 const socketOptions = {
-  transports: ['websocket', 'polling'],
+  transports: ['polling', 'websocket'],
   path: '/socket.io',
   secure: true,
   rejectUnauthorized: false,
-  withCredentials: true
+  withCredentials: true,
+  timeout: 20000,
+  upgrade: true,
+  rememberUpgrade: true
 };
 
 type GameState = ChessGameState | GoGameState;
@@ -54,16 +57,16 @@ class GameSocket {
     this.socket = io(SOCKET_URL, {
       ...socketOptions,
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 10000,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
+      timeout: 20000,
       autoConnect: true,
-      forceNew: true
+      forceNew: false
     });
 
     let retryCount = 0;
-    const maxRetries = 3;
+    const maxRetries = 10;  // Match reconnectionAttempts
 
     // Add connection event handlers
     this.socket.on('connect', () => {

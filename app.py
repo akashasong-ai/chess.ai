@@ -66,13 +66,16 @@ socketio = SocketIO(
         'http://127.0.0.1:5173'
     ],
     message_queue=REDIS_URL if os.getenv('FLASK_ENV') == 'production' else None,
-    async_mode='gevent',
+    async_mode='eventlet',
     logger=True,
     engineio_logger=True,
     ping_timeout=PING_TIMEOUT,
     ping_interval=PING_INTERVAL,
     allow_credentials=True,
-    transports=['websocket', 'polling']
+    transports=['polling', 'websocket'],
+    upgrade_timeout=20000,
+    max_http_buffer_size=1e8,
+    always_connect=True
 )
 
 # Initialize Redis connection with error handling
