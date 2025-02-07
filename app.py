@@ -31,16 +31,19 @@ def validate_request(required_fields: Optional[List[str]] = None):
         return decorated_function
     return decorator
 
-# Environment variables
-CORS_ORIGIN = os.getenv('CORS_ORIGIN', 'https://ai-arena-frontend.onrender.com')
-REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
-PORT = int(os.environ.get('PORT', 5000))
-PING_TIMEOUT = 300000  # 5 minutes to match Render.com free tier
-PING_INTERVAL = 25000
-
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+# Environment variables
+CORS_ORIGIN = os.getenv('CORS_ORIGIN', 'https://ai-arena-frontend.onrender.com')
+REDIS_URL = os.getenv('REDIS_URL', '')
+if not REDIS_URL and os.getenv('FLASK_ENV') != 'production':
+    REDIS_URL = 'redis://localhost:6379'
+    logger.warning("No Redis URL provided, using localhost for development")
+PORT = int(os.environ.get('PORT', 5000))
+PING_TIMEOUT = 300000  # 5 minutes to match Render.com free tier
+PING_INTERVAL = 25000
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -72,23 +75,29 @@ socketio = SocketIO(
     ping_timeout=PING_TIMEOUT,
     ping_interval=PING_INTERVAL,
     allow_credentials=True,
-    transports=['websocket', 'polling']
+    transports=['polling', 'websocket'],  # Start with polling, upgrade to websocket
+    always_connect=True,  # Ensure connection attempts are made
+    max_http_buffer_size=1e8  # Increase buffer size for large payloads
 )
 
 # Initialize Redis connection with error handling
+redis_client = None
 try:
-    redis_client = Redis.from_url(REDIS_URL)
-    redis_client.ping()  # Test connection
-    logger.info("Redis connection successful")
+    if REDIS_URL:
+        redis_client = Redis.from_url(REDIS_URL)
+        redis_client.ping()  # Test connection
+        logger.info("Redis connection successful")
+    elif os.getenv('FLASK_ENV') == 'production':
+        raise ValueError("Redis URL is required in production")
+    else:
+        logger.warning("No Redis URL provided, using in-memory state for development")
 except Exception as e:
     logger.error(f"Redis connection failed: {e}")
-    redis_client = None
-    # Continue without Redis in development
     if os.getenv('FLASK_ENV') == 'production':
         raise
 
 def get_game_state_from_redis(game_id: str) -> Dict[str, Any]:
-    """Get game state from Redis"""
+    """Get game state from Redis with improved error handling and fallback"""
     default_state = {
         'status': 'inactive',
         'currentPlayer': 'white',
@@ -96,14 +105,32 @@ def get_game_state_from_redis(game_id: str) -> Dict[str, Any]:
         'blackAI': None,
         'winner': None
     }
+    
+    # Use in-memory state if Redis is not configured
     if redis_client is None:
         logger.warning("Redis not available, using in-memory state")
         return default_state
+        
     try:
+        # Attempt to get state from Redis with timeout
         state = redis_client.get(f'game:{game_id}')
-        return json.loads(state) if state else default_state
+        if not state:
+            logger.info(f"No state found for game {game_id}, using default")
+            return default_state
+            
+        try:
+            parsed_state = json.loads(state)
+            return parsed_state
+        except json.JSONDecodeError as je:
+            logger.error(f"Invalid JSON in Redis for game {game_id}: {je}")
+            return default_state
+            
     except Exception as e:
-        logger.error(f"Error getting game state from Redis: {e}")
+        logger.error(f"Redis error for game {game_id}: {e}")
+        if os.getenv('FLASK_ENV') == 'production':
+            # In production, propagate Redis errors for monitoring
+            logger.error("Redis error in production environment")
+            raise
         return default_state
 
 def set_game_state(game_id: str, state: Dict[str, Any]) -> None:
@@ -343,18 +370,38 @@ def get_leaderboard_route():
 # Socket.IO event handlers
 @socketio.on_error_default
 def default_error_handler(e):
-    logger.error(f"WebSocket error: {str(e)}")
-    emit('error', {'message': 'Internal server error'})
+    error_message = str(e)
+    logger.error(f"WebSocket error: {error_message}")
+    
+    if "Redis" in error_message:
+        if os.getenv('FLASK_ENV') == 'production':
+            emit('error', {'message': 'Server error: Unable to access game state. Please try again later.'})
+            raise  # Re-raise in production for monitoring
+        else:
+            emit('error', {'message': 'Development: Redis unavailable, using in-memory state'})
+    elif "WebSocket" in error_message or "transport" in error_message:
+        emit('error', {'message': 'Connection error. Attempting to reconnect...'})
+    else:
+        emit('error', {'message': 'An unexpected error occurred. Please try again.'})
 
 @socketio.on('connect')
 def handle_connect():
-    """Handle client connection"""
+    """Handle client connection with improved error handling"""
     try:
         logger.info('Client connected')
+        # Verify Redis connection in production
+        if os.getenv('FLASK_ENV') == 'production' and redis_client:
+            try:
+                redis_client.ping()
+            except Exception as redis_error:
+                logger.error(f"Redis health check failed on connect: {redis_error}")
+                emit('error', {'message': 'Server error: Game state service unavailable'})
+                return False
         emit('connected', {'status': 'success'})
     except Exception as e:
         logger.error(f"Connection error: {str(e)}")
-        return False  # Reject connection on error
+        emit('error', {'message': 'Failed to establish connection'})
+        return False
 
 @socketio.on('connect_error')
 def handle_connect_error(error):
