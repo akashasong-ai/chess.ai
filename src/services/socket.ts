@@ -3,7 +3,7 @@ import type { ChessGameState } from '../types/chess';
 import type { GoGameState, GoGameUpdate } from '../types/go';
 import type { LeaderboardEntry } from '../types/leaderboard';
 
-const SOCKET_URL = 'https://ai-arena-backend.onrender.com';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://ai-arena-backend.onrender.com';
 console.log('Using WebSocket URL:', SOCKET_URL);
 
 // Configure Socket.IO to use WebSocket transport
@@ -11,7 +11,8 @@ const socketOptions = {
   transports: ['websocket'],
   path: '/socket.io',
   secure: true,
-  rejectUnauthorized: false
+  rejectUnauthorized: false,
+  withCredentials: true
 };
 
 type GameState = ChessGameState | GoGameState;
