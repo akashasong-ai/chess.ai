@@ -10,11 +10,13 @@ from itertools import combinations
 from functools import wraps
 
 import chess
-from gevent import monkey; monkey.patch_all()
+from gevent import monkey
+monkey.patch_all(subprocess=True, thread=False)  # Proper monkey patching for gevent
 from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 from redis import Redis
+from backend.tournament import Tournament
 
 def validate_request(required_fields: Optional[List[str]] = None):
     def decorator(f: Callable):
@@ -48,26 +50,31 @@ PING_INTERVAL = 25000
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app, 
-    resources={r"/*": {
-        "origins": [os.getenv('CORS_ORIGIN', 'https://ai-arena-frontend.onrender.com')],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"],
-        "expose_headers": ["Content-Type"],
-        "supports_credentials": True,
-        "send_wildcard": False,
-        "max_age": 86400
-    }},
+    resources={
+        r"/api/*": {
+            "origins": [CORS_ORIGIN],
+            "methods": ["GET", "POST", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "expose_headers": ["Content-Type"],
+            "supports_credentials": True,
+            "max_age": 86400
+        },
+        r"/socket.io/*": {
+            "origins": [CORS_ORIGIN],
+            "methods": ["GET", "POST", "OPTIONS"],
+            "allow_headers": ["Content-Type"],
+            "expose_headers": ["Content-Type"],
+            "supports_credentials": True,
+            "max_age": 86400
+        }
+    },
     allow_credentials=True
 )
 
 # Initialize Socket.IO with Redis and eventlet
 socketio = SocketIO(
     app,
-    cors_allowed_origins=[
-        os.getenv('CORS_ORIGIN', 'https://ai-arena-frontend.onrender.com'),
-        'http://localhost:5173',  # Vite dev server
-        'http://127.0.0.1:5173'
-    ],
+    cors_allowed_origins=[CORS_ORIGIN],
     message_queue=REDIS_URL if os.getenv('FLASK_ENV') == 'production' else None,
     async_mode='gevent',
     logger=True,
@@ -77,7 +84,14 @@ socketio = SocketIO(
     allow_credentials=True,
     transports=['polling', 'websocket'],  # Start with polling, upgrade to websocket
     always_connect=True,  # Ensure connection attempts are made
-    max_http_buffer_size=1e8  # Increase buffer size for large payloads
+    max_http_buffer_size=1e8,  # Increase buffer size for large payloads
+    cors_credentials=True,  # Enable CORS credentials
+    manage_session=True,  # Manage WebSocket session
+    websocket_ping_timeout=PING_TIMEOUT,  # Match WebSocket ping timeout with Socket.IO
+    websocket_ping_interval=PING_INTERVAL,  # Match WebSocket ping interval with Socket.IO
+    upgrade_timeout=10000,  # Allow more time for transport upgrade
+    cookie_path='/socket.io/',  # Restrict cookie path for better security
+    cookie_samesite='Strict'  # Enforce same-site cookie policy
 )
 
 # Initialize Redis connection with error handling
@@ -344,6 +358,34 @@ def stop_game():
         return jsonify({'success': True})
     except Exception as e:
         logger.error(f"Error in stop_game: {str(e)}")
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/tournament/start', methods=['POST', 'OPTIONS'])
+@validate_request(['players', 'gameType'])
+def start_tournament():
+    try:
+        data = request.get_json()
+        players = data.get('players', [])
+        game_type = data.get('gameType', 'chess')
+        num_games = data.get('numGames', 1)
+        time_control = data.get('timeControl', 600)
+
+        if not players or len(players) < 2:
+            return jsonify({'error': 'At least 2 players required'}), 400
+
+        tournament = Tournament(game_type, players, num_games, time_control)
+        tournament.start()
+        
+        # Store tournament state in Redis
+        tournament_state = tournament.get_status()
+        set_tournament_state(tournament_state)
+        
+        return jsonify({
+            'success': True,
+            'status': tournament_state
+        })
+    except Exception as e:
+        logger.error(f"Error in start_tournament: {str(e)}")
         return jsonify({'error': str(e)}), 400
 
 @app.route('/api/leaderboard', methods=['GET', 'OPTIONS'])
