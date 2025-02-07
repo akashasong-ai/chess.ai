@@ -69,10 +69,12 @@ socketio = SocketIO(
     async_mode='gevent',
     logger=True,
     engineio_logger=True,
-    ping_timeout=PING_TIMEOUT,
-    ping_interval=PING_INTERVAL,
-    allow_credentials=True,
-    transports=['websocket', 'polling']
+    ping_timeout=20000,
+    ping_interval=10000,
+    allow_upgrades=True,
+    transports=['polling', 'websocket'],
+    always_connect=True,
+    allow_credentials=True
 )
 
 # Initialize Redis connection with error handling

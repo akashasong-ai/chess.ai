@@ -3,16 +3,18 @@ import type { ChessGameState } from '../types/chess';
 import type { GoGameState, GoGameUpdate } from '../types/go';
 import type { LeaderboardEntry } from '../types/leaderboard';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://ai-arena-backend.onrender.com';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 console.log('Using WebSocket URL:', SOCKET_URL);
 
 // Configure Socket.IO to use WebSocket transport
 const socketOptions = {
-  transports: ['websocket', 'polling'],
+  transports: ['polling', 'websocket'],  // Try polling first, then upgrade
   path: '/socket.io',
   secure: true,
   rejectUnauthorized: false,
-  withCredentials: true
+  withCredentials: true,
+  timeout: 20000,  // Increase timeout for connection upgrade
+  autoConnect: false  // Manual connection control
 };
 
 type GameState = ChessGameState | GoGameState;
@@ -38,12 +40,17 @@ interface SocketEvents {
   tournamentUpdate: (data: TournamentStatus) => void;
   validMoves: (moves: string[]) => void;
   connectionStatus: (status: 'connected' | 'connecting' | 'disconnected') => void;
+  error: (data: { message: string }) => void;
   // Client -> Server events
   'move': (data: { from?: string; to?: string; x?: number; y?: number; gameId: string }) => void;
   'getValidMoves': (data: { position: string; gameId: string }) => void;
   'joinGame': (gameId: string) => void;
   leaveGame: () => void;
   getLeaderboard: () => void;
+}
+
+interface SocketEvents {
+  error: (data: { message: string }) => void;
 }
 
 class GameSocket {
@@ -54,45 +61,40 @@ class GameSocket {
     this.socket = io(SOCKET_URL, {
       ...socketOptions,
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 10000,
-      autoConnect: true,
-      forceNew: true
+      reconnectionAttempts: 3,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000
     });
 
-    let retryCount = 0;
-    const maxRetries = 3;
-
-    // Add connection event handlers
+    // Try polling first
+    if (this.socket.io?.opts) {
+      this.socket.io.opts.transports = ['polling'];
+    }
+    
     this.socket.on('connect', () => {
       console.log('Connected to game server');
+      // Upgrade to WebSocket after successful polling connection
+      if (this.socket.io?.opts?.transports && !this.socket.io.opts.transports.includes('websocket')) {
+        this.socket.io.opts.transports = ['polling', 'websocket'];
+      }
       this.emit('connectionStatus', 'connected');
     });
 
     this.socket.on('connect_error', (error: Error) => {
       console.error('Connection error:', error);
       this.emit('connectionStatus', 'disconnected');
-      retryCount++;
       
-      if (retryCount <= maxRetries) {
-        console.log(`Retrying connection (${retryCount}/${maxRetries})`);
-        const backoffDelay = Math.min(1000 * Math.pow(2, retryCount - 1), 10000);
-        
-        // Try polling if WebSocket fails
-        if (this.socket.io?.opts?.transports?.includes('websocket')) {
-          console.log('Falling back to polling transport');
-          this.socket.io.opts.transports = ['polling'];
-        }
-        
-        // Attempt reconnection with exponential backoff
-        setTimeout(() => {
-          console.log(`Attempting reconnection after ${backoffDelay}ms delay`);
-          this.socket.connect();
-        }, backoffDelay);
+      // If WebSocket fails, fall back to polling only
+      if (this.socket.io?.opts?.transports?.includes('websocket')) {
+        console.log('WebSocket connection failed, falling back to polling');
+        this.socket.io.opts.transports = ['polling'];
+        this.socket.connect();
       } else {
-        console.error('Max reconnection attempts reached');
+        console.error('Both WebSocket and polling failed');
+        // Notify user of connection issues
+        this.emit('error', {
+          message: 'Unable to establish connection. Please try refreshing the page.'
+        });
         this.socket.disconnect();
       }
     });
@@ -107,7 +109,10 @@ class GameSocket {
 
     this.socket.on('reconnect', (attemptNumber: number) => {
       console.log('Reconnected after', attemptNumber, 'attempts');
-      retryCount = 0; // Reset retry count on successful reconnection
+      // Try upgrading to WebSocket after successful reconnection
+      if (this.socket.io?.opts?.transports && !this.socket.io.opts.transports.includes('websocket')) {
+        this.socket.io.opts.transports = ['polling', 'websocket'];
+      }
     });
   }
 
