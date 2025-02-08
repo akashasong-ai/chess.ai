@@ -4,11 +4,14 @@ logger = logging.getLogger(__name__)
 
 import os
 import eventlet
-eventlet.monkey_patch()
-
-from flask import Flask, request, jsonify, make_response
+import json
+from redis import Redis
+from flask import Flask
 from flask_cors import CORS
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
+
+# Initialize Redis first
+eventlet.monkey_patch()
 
 # Environment variables
 CORS_ORIGIN = os.getenv('CORS_ORIGIN', 'https://chess-ai-frontend.onrender.com')
@@ -17,18 +20,9 @@ PORT = int(os.environ.get('PORT', 5000))
 PING_TIMEOUT = 300000  # 5 minutes to match Render.com free tier
 PING_INTERVAL = 25000
 
-# Redis configuration with proper error handling
-if not REDIS_URL:
-    if os.getenv('FLASK_ENV') == 'production':
-        logger.error("Redis URL is required in production")
-        raise ValueError("Redis URL is required in production")
-    else:
-        REDIS_URL = 'redis://localhost:6379'
-        logger.warning("No Redis URL provided, using localhost for development")
-
-# Initialize Redis client early to catch connection issues
-from redis import Redis
+# Redis configuration
 redis_client = None
+
 try:
     if REDIS_URL:
         redis_client = Redis.from_url(REDIS_URL, socket_timeout=5)
@@ -44,8 +38,12 @@ except Exception as e:
         raise
     redis_client = None
 
-# Initialize Flask app
+# Redis client is already initialized above
+
+# Initialize Flask app after Redis
 app = Flask(__name__)
+
+# Configure CORS
 CORS(app, 
     resources={
         r"/api/*": {
@@ -68,11 +66,11 @@ CORS(app,
     allow_credentials=True
 )
 
-# Initialize Socket.IO with proper transport and connection settings
+# Initialize Socket.IO with Redis message queue
 socketio = SocketIO(
     app,
     cors_allowed_origins=[CORS_ORIGIN],
-    message_queue=REDIS_URL if os.getenv('FLASK_ENV') == 'production' else None,
+    message_queue=REDIS_URL if redis_client else None,
     async_mode='eventlet',
     logger=True,
     engineio_logger=True,
@@ -97,7 +95,5 @@ socketio = SocketIO(
     async_handlers=True
 )
 
-# Import Tournament class after app initialization to avoid circular imports
-from backend.tournament import Tournament
-
-__all__ = ['app', 'socketio', 'Tournament']
+# Export app, socketio, and redis_client
+__all__ = ['app', 'socketio', 'redis_client']
