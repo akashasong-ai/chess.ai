@@ -10,12 +10,20 @@ services:
       - key: FLASK_ENV
         value: production
       - key: CORS_ORIGIN
-        value: https://ai-arena-frontend.onrender.com
+        value: https://chess-ai-frontend.onrender.com
       - key: REDIS_URL
         fromService:
           type: redis
           name: chess-game-state
           property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: PERPLEXITY_API_KEY
+        sync: false
 
   - type: redis
     name: chess-game-state
@@ -28,6 +36,6 @@ services:
     staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
-        value: https://ai-arena-backend.onrender.com
+        value: https://chess-ai-backend.onrender.com
       - key: VITE_SOCKET_URL
-        value: https://ai-arena-backend.onrender.com
+        value: https://chess-ai-backend.onrender.com
