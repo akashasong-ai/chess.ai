@@ -2,21 +2,16 @@ import json
 import os
 import random
 import logging
-import time
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, Optional, Any, List, Callable
-from itertools import combinations
+from typing import Dict, Optional, Any, List, Callable, Union
 from functools import wraps
-
 import chess
-from gevent import monkey
-monkey.patch_all(subprocess=True, thread=False)  # Proper monkey patching for gevent
-from flask import Flask, request, jsonify, make_response
-from flask_cors import CORS
-from flask_socketio import SocketIO, emit
+from flask import request, jsonify, make_response
+from flask_socketio import emit
 from redis import Redis
-from backend.tournament import Tournament
+from backend.app_factory import app, socketio, Tournament
+from backend.tournament import TournamentStatus
+
+logger = logging.getLogger(__name__)
 
 def validate_request(required_fields: Optional[List[str]] = None):
     def decorator(f: Callable):
@@ -38,61 +33,10 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Environment variables
-CORS_ORIGIN = os.getenv('CORS_ORIGIN', 'https://ai-arena-frontend.onrender.com')
 REDIS_URL = os.getenv('REDIS_URL', '')
 if not REDIS_URL and os.getenv('FLASK_ENV') != 'production':
     REDIS_URL = 'redis://localhost:6379'
     logger.warning("No Redis URL provided, using localhost for development")
-PORT = int(os.environ.get('PORT', 5000))
-PING_TIMEOUT = 300000  # 5 minutes to match Render.com free tier
-PING_INTERVAL = 25000
-
-# Initialize Flask app
-app = Flask(__name__)
-CORS(app, 
-    resources={
-        r"/api/*": {
-            "origins": [CORS_ORIGIN],
-            "methods": ["GET", "POST", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"],
-            "expose_headers": ["Content-Type"],
-            "supports_credentials": True,
-            "max_age": 86400
-        },
-        r"/socket.io/*": {
-            "origins": [CORS_ORIGIN],
-            "methods": ["GET", "POST", "OPTIONS"],
-            "allow_headers": ["Content-Type"],
-            "expose_headers": ["Content-Type"],
-            "supports_credentials": True,
-            "max_age": 86400
-        }
-    },
-    allow_credentials=True
-)
-
-# Initialize Socket.IO with Redis and eventlet
-socketio = SocketIO(
-    app,
-    cors_allowed_origins=[CORS_ORIGIN],
-    message_queue=REDIS_URL if os.getenv('FLASK_ENV') == 'production' else None,
-    async_mode='gevent',
-    logger=True,
-    engineio_logger=True,
-    ping_timeout=PING_TIMEOUT,
-    ping_interval=PING_INTERVAL,
-    allow_credentials=True,
-    transports=['polling', 'websocket'],  # Start with polling, upgrade to websocket
-    always_connect=True,  # Ensure connection attempts are made
-    max_http_buffer_size=1e8,  # Increase buffer size for large payloads
-    cors_credentials=True,  # Enable CORS credentials
-    manage_session=True,  # Manage WebSocket session
-    websocket_ping_timeout=PING_TIMEOUT,  # Match WebSocket ping timeout with Socket.IO
-    websocket_ping_interval=PING_INTERVAL,  # Match WebSocket ping interval with Socket.IO
-    upgrade_timeout=10000,  # Allow more time for transport upgrade
-    cookie_path='/socket.io/',  # Restrict cookie path for better security
-    cookie_samesite='Strict'  # Enforce same-site cookie policy
-)
 
 # Initialize Redis connection with error handling
 redis_client = None
