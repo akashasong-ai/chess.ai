@@ -2,30 +2,16 @@ import json
 import os
 import random
 import logging
-import time
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, Optional, Any, List, Callable
-from itertools import combinations
+from typing import Dict, Optional, Any, List, Callable, Union
 from functools import wraps
-
-import json
-import os
-import random
-import logging
-import time
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, Optional, Any, List, Callable
-from itertools import combinations
-from functools import wraps
-
 import chess
 from flask import request, jsonify, make_response
 from flask_socketio import emit
 from redis import Redis
-from backend.app_factory import app, socketio
-from backend.tournament import Tournament
+from backend.app_factory import app, socketio, Tournament
+from backend.tournament import TournamentStatus
+
+logger = logging.getLogger(__name__)
 
 def validate_request(required_fields: Optional[List[str]] = None):
     def decorator(f: Callable):

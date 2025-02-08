@@ -1,20 +1,31 @@
+import os
+import logging
+from gevent import monkey
+monkey.patch_all(subprocess=True, thread=False)
+
 from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
-import os
-import logging
 
+# Initialize logging before anything else
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Environment variables
 CORS_ORIGIN = os.getenv('CORS_ORIGIN', 'https://ai-arena-frontend.onrender.com')
 REDIS_URL = os.getenv('REDIS_URL', '')
-if not REDIS_URL and os.getenv('FLASK_ENV') != 'production':
-    REDIS_URL = 'redis://localhost:6379'
-    logger.warning("No Redis URL provided, using localhost for development")
 PORT = int(os.environ.get('PORT', 5000))
 PING_TIMEOUT = 300000  # 5 minutes to match Render.com free tier
 PING_INTERVAL = 25000
+
+# Redis configuration with proper error handling
+if not REDIS_URL:
+    if os.getenv('FLASK_ENV') == 'production':
+        logger.error("Redis URL is required in production")
+        raise ValueError("Redis URL is required in production")
+    else:
+        REDIS_URL = 'redis://localhost:6379'
+        logger.warning("No Redis URL provided, using localhost for development")
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -40,7 +51,7 @@ CORS(app,
     allow_credentials=True
 )
 
-# Initialize Socket.IO
+# Initialize Socket.IO with proper transport and connection settings
 socketio = SocketIO(
     app,
     cors_allowed_origins=[CORS_ORIGIN],
@@ -58,7 +69,17 @@ socketio = SocketIO(
     manage_session=True,
     websocket_ping_timeout=PING_TIMEOUT,
     websocket_ping_interval=PING_INTERVAL,
-    upgrade_timeout=10000,
+    upgrade_timeout=20000,
     cookie_path='/socket.io/',
-    cookie_samesite='Strict'
+    cookie_samesite='Strict',
+    path='/socket.io/',
+    reconnection=True,
+    reconnection_attempts=5,
+    reconnection_delay=1000,
+    reconnection_delay_max=5000
 )
+
+# Import Tournament class after app initialization to avoid circular imports
+from backend.tournament import Tournament
+
+__all__ = ['app', 'socketio', 'Tournament']
