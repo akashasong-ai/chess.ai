@@ -1,18 +1,17 @@
-import os
 import logging
-from gevent import monkey
-monkey.patch_all(subprocess=True, thread=False)
-
-from flask import Flask
-from flask_cors import CORS
-from flask_socketio import SocketIO
-
-# Initialize logging before anything else
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+import os
+import eventlet
+eventlet.monkey_patch()
+
+from flask import Flask, request, jsonify, make_response
+from flask_cors import CORS
+from flask_socketio import SocketIO, emit
+
 # Environment variables
-CORS_ORIGIN = os.getenv('CORS_ORIGIN', 'https://ai-arena-frontend.onrender.com')
+CORS_ORIGIN = os.getenv('CORS_ORIGIN', 'https://chess-ai-frontend.onrender.com')
 REDIS_URL = os.getenv('REDIS_URL', '')
 PORT = int(os.environ.get('PORT', 5000))
 PING_TIMEOUT = 300000  # 5 minutes to match Render.com free tier
@@ -26,6 +25,24 @@ if not REDIS_URL:
     else:
         REDIS_URL = 'redis://localhost:6379'
         logger.warning("No Redis URL provided, using localhost for development")
+
+# Initialize Redis client early to catch connection issues
+from redis import Redis
+redis_client = None
+try:
+    if REDIS_URL:
+        redis_client = Redis.from_url(REDIS_URL, socket_timeout=5)
+        redis_client.ping()
+        logger.info("Redis connection successful")
+    elif os.getenv('FLASK_ENV') == 'production':
+        raise ValueError("Redis URL is required in production")
+    else:
+        logger.warning("No Redis URL provided, using in-memory state for development")
+except Exception as e:
+    logger.error(f"Redis connection failed: {e}")
+    if os.getenv('FLASK_ENV') == 'production':
+        raise
+    redis_client = None
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -65,7 +82,6 @@ socketio = SocketIO(
     transports=['polling', 'websocket'],
     always_connect=True,
     max_http_buffer_size=1e8,
-    cors_credentials=True,
     manage_session=True,
     websocket_ping_timeout=PING_TIMEOUT,
     websocket_ping_interval=PING_INTERVAL,
@@ -73,10 +89,12 @@ socketio = SocketIO(
     cookie_path='/socket.io/',
     cookie_samesite='Strict',
     path='/socket.io/',
+    cors_credentials=True,
     reconnection=True,
     reconnection_attempts=5,
     reconnection_delay=1000,
-    reconnection_delay_max=5000
+    reconnection_delay_max=5000,
+    async_handlers=True
 )
 
 # Import Tournament class after app initialization to avoid circular imports
