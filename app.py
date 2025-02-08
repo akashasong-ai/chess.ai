@@ -7,9 +7,8 @@ from functools import wraps
 import chess
 from flask import request, jsonify, make_response
 from flask_socketio import emit
-from redis import Redis
-from backend.app_factory import app, socketio, Tournament
-from backend.tournament import TournamentStatus
+from backend.app_factory import app, socketio, redis_client
+from backend.tournament import Tournament, TournamentStatus
 
 logger = logging.getLogger(__name__)
 
@@ -38,21 +37,11 @@ if not REDIS_URL and os.getenv('FLASK_ENV') != 'production':
     REDIS_URL = 'redis://localhost:6379'
     logger.warning("No Redis URL provided, using localhost for development")
 
-# Initialize Redis connection with error handling
-redis_client = None
-try:
-    if REDIS_URL:
-        redis_client = Redis.from_url(REDIS_URL)
-        redis_client.ping()  # Test connection
-        logger.info("Redis connection successful")
-    elif os.getenv('FLASK_ENV') == 'production':
-        raise ValueError("Redis URL is required in production")
-    else:
-        logger.warning("No Redis URL provided, using in-memory state for development")
-except Exception as e:
-    logger.error(f"Redis connection failed: {e}")
-    if os.getenv('FLASK_ENV') == 'production':
-        raise
+# Use redis_client from app_factory
+if redis_client is None:
+    logger.warning("Redis client not available, using in-memory state")
+else:
+    logger.info("Using Redis client from app_factory")
 
 def get_game_state_from_redis(game_id: str) -> Dict[str, Any]:
     """Get game state from Redis with improved error handling and fallback"""
