@@ -38,23 +38,7 @@ except Exception as e:
         raise
     redis_client = None
 
-# Initialize Redis client early to catch connection issues
-from redis import Redis
-redis_client = None
-try:
-    if REDIS_URL:
-        redis_client = Redis.from_url(REDIS_URL, socket_timeout=5)
-        redis_client.ping()
-        logger.info("Redis connection successful")
-    elif os.getenv('FLASK_ENV') == 'production':
-        raise ValueError("Redis URL is required in production")
-    else:
-        logger.warning("No Redis URL provided, using in-memory state for development")
-except Exception as e:
-    logger.error(f"Redis connection failed: {e}")
-    if os.getenv('FLASK_ENV') == 'production':
-        raise
-    redis_client = None
+# Redis client is already initialized above
 
 # Initialize Flask app after Redis
 app = Flask(__name__)
