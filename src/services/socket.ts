@@ -1,31 +1,29 @@
-import io, { Socket } from 'socket.io-client';
+import io from 'socket.io-client';
 import type { ChessGameState } from '../types/chess';
 import type { GoGameState, GoGameUpdate } from '../types/go';
 import type { LeaderboardEntry } from '../types/leaderboard';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://ai-arena-backend.onrender.com';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://chess-ai-backend.onrender.com';
 console.log('Using WebSocket URL:', SOCKET_URL);
 
 // Configure Socket.IO with improved transport and reconnection settings
-interface SocketIOEngine {
-  transport: {
-    name: string;
-  };
-  on(event: string, callback: () => void): void;
-}
-
-interface SocketIOManager {
-  engine: SocketIOEngine;
-  opts?: {
-    transports?: string[];
-  };
-}
-
-import { Socket } from 'socket.io-client';
-
-interface ExtendedSocket extends Socket {
-  io: SocketIOManager;
+type ExtendedSocket = ReturnType<typeof io> & {
   connected: boolean;
+  disconnect: () => void;
+  on: (event: string, callback: (...args: any[]) => void) => void;
+  off: (event: string, callback: (...args: any[]) => void) => void;
+  emit: (event: string, ...args: any[]) => void;
+  io: {
+    engine: {
+      transport: {
+        name: string;
+      };
+      on(event: string, callback: () => void): void;
+    };
+    opts?: {
+      transports?: string[];
+    };
+  };
 }
 
 interface SocketOptions {
@@ -108,7 +106,7 @@ class GameSocket {
       this.socket.disconnect();
     }
     
-    this.socket = io(SOCKET_URL, socketOptions);
+    this.socket = io(SOCKET_URL, socketOptions) as ExtendedSocket;
     
     // Force transport upgrade after connection
     this.socket.on('connect', () => {
