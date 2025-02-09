@@ -1,4 +1,5 @@
-import io, { Socket } from 'socket.io-client';
+import { Manager, Socket } from 'socket.io-client';
+import io from 'socket.io-client';
 import type { ChessGameState } from '../types/chess';
 import type { GoGameState, GoGameUpdate } from '../types/go';
 import type { LeaderboardEntry } from '../types/leaderboard';
@@ -21,11 +22,8 @@ interface SocketIOManager {
   };
 }
 
-import { Socket } from 'socket.io-client';
-
-interface ExtendedSocket extends Socket {
-  io: SocketIOManager;
-  connected: boolean;
+type ExtendedSocket = Socket & {
+  io: Manager;
 }
 
 interface SocketOptions {
