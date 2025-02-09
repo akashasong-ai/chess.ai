@@ -1,4 +1,4 @@
-import io from 'socket.io-client';
+import io, { Socket } from 'socket.io-client';
 import type { ChessGameState } from '../types/chess';
 import type { GoGameState, GoGameUpdate } from '../types/go';
 import type { LeaderboardEntry } from '../types/leaderboard';
@@ -7,15 +7,65 @@ const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://ai-arena-backend.
 console.log('Using WebSocket URL:', SOCKET_URL);
 
 // Configure Socket.IO with improved transport and reconnection settings
-const socketOptions = {
-  transports: ['polling', 'websocket'],  // Start with polling, upgrade to websocket
+interface SocketIOEngine {
+  transport: {
+    name: string;
+  };
+  on(event: string, callback: () => void): void;
+}
+
+interface SocketIOManager {
+  engine: SocketIOEngine;
+  opts?: {
+    transports?: string[];
+  };
+}
+
+import { Socket } from 'socket.io-client';
+
+interface ExtendedSocket extends Socket {
+  io: SocketIOManager;
+  connected: boolean;
+}
+
+interface SocketOptions {
+  transports: string[];
+  path: string;
+  secure: boolean;
+  rejectUnauthorized: boolean;
+  withCredentials: boolean;
+  timeout: number;
+  reconnectionDelayMax: number;
+  reconnectionAttempts: number;
+  forceNew: boolean;
+  upgrade: boolean;
+  rememberUpgrade: boolean;
+  autoConnect: boolean;
+  reconnection: boolean;
+  reconnectionDelay: number;
+  extraHeaders: {
+    'Cache-Control': string;
+  };
+}
+
+const socketOptions: SocketOptions = {
+  transports: ['polling', 'websocket'],
   path: '/socket.io',
   secure: true,
   rejectUnauthorized: false,
   withCredentials: true,
-  timeout: 20000,  // Increase timeout for slow connections
-  reconnectionDelayMax: 10000,  // Maximum delay between reconnection attempts
-  reconnectionAttempts: 5  // Increase max reconnection attempts
+  timeout: 60000,
+  reconnectionDelayMax: 30000,
+  reconnectionAttempts: 10,
+  forceNew: true,
+  upgrade: true,
+  rememberUpgrade: true,
+  autoConnect: true,
+  reconnection: true,
+  reconnectionDelay: 1000,
+  extraHeaders: {
+    'Cache-Control': 'no-cache'
+  }
 };
 
 type GameState = ChessGameState | GoGameState;
@@ -51,69 +101,32 @@ interface SocketEvents {
 }
 
 class GameSocket {
-  socket: ReturnType<typeof io>;
+  private socket!: ExtendedSocket;
+
+  private connect() {
+    if (this.socket?.connected) {
+      this.socket.disconnect();
+    }
+    
+    this.socket = io(SOCKET_URL, socketOptions);
+    
+    // Force transport upgrade after connection
+    this.socket.on('connect', () => {
+      console.log('Socket connected with transport:', this.socket.io.engine.transport.name);
+      
+      if (this.socket.io.engine.transport.name === 'polling') {
+        this.socket.io.engine.on('upgrade', () => {
+          console.log('Transport upgraded to:', this.socket.io.engine.transport.name);
+        });
+      }
+    });
+
+    this.setupEventHandlers();
+  }
 
   constructor() {
     console.log('Initializing socket connection to:', SOCKET_URL);
-    this.socket = io(SOCKET_URL, {
-      ...socketOptions,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 10000,
-      autoConnect: true,
-      forceNew: true
-    });
-
-    let retryCount = 0;
-    const maxRetries = 3;
-
-    // Add connection event handlers
-    this.socket.on('connect', () => {
-      console.log('Connected to game server');
-      this.emit('connectionStatus', 'connected');
-    });
-
-    this.socket.on('connect_error', (error: Error) => {
-      console.error('Connection error:', error);
-      this.emit('connectionStatus', 'disconnected');
-      retryCount++;
-      
-      if (retryCount <= maxRetries) {
-        console.log(`Retrying connection (${retryCount}/${maxRetries})`);
-        const backoffDelay = Math.min(1000 * Math.pow(2, retryCount - 1), 10000);
-        
-        // Try polling if WebSocket fails
-        if (this.socket.io?.opts?.transports?.includes('websocket')) {
-          console.log('Falling back to polling transport');
-          this.socket.io.opts.transports = ['polling'];
-        }
-        
-        // Attempt reconnection with exponential backoff
-        setTimeout(() => {
-          console.log(`Attempting reconnection after ${backoffDelay}ms delay`);
-          this.socket.connect();
-        }, backoffDelay);
-      } else {
-        console.error('Max reconnection attempts reached');
-        this.emit('error', { message: 'Connection failed after multiple attempts. Please refresh the page or try again later.' });
-        this.socket.disconnect();
-      }
-    });
-
-    this.socket.on('disconnect', (reason: string) => {
-      console.log('Disconnected:', reason);
-      if (reason === 'io server disconnect') {
-        // Server initiated disconnect, try to reconnect
-        this.socket.connect();
-      }
-    });
-
-    this.socket.on('reconnect', (attemptNumber: number) => {
-      console.log('Reconnected after', attemptNumber, 'attempts');
-      retryCount = 0; // Reset retry count on successful reconnection
-    });
+    this.connect();
   }
 
   joinGame(gameId: string) {
@@ -125,27 +138,123 @@ class GameSocket {
   }
 
   onGameUpdate<T extends ChessGameState | GoGameUpdate>(callback: (state: T) => void) {
-    this.socket.on('gameUpdate', callback as (state: any) => void);
+    this.socket.on('gameUpdate', (state: T) => {
+      console.log('Received game update:', state);
+      callback(state);
+    });
     return () => this.socket.off('gameUpdate', callback as (state: any) => void);
   }
 
   onLeaderboardUpdate(callback: (data: LeaderboardEntry[]) => void) {
-    this.socket.on('leaderboardUpdate', callback);
+    this.socket.on('leaderboardUpdate', (data: LeaderboardEntry[]) => {
+      console.log('Received leaderboard update:', data);
+      callback(data);
+    });
     return () => this.socket.off('leaderboardUpdate', callback);
   }
 
   onTournamentUpdate(callback: (data: TournamentStatus) => void) {
-    this.socket.on('tournamentUpdate', callback);
+    this.socket.on('tournamentUpdate', (data: TournamentStatus) => {
+      console.log('Received tournament update:', data);
+      callback(data);
+    });
     return () => this.socket.off('tournamentUpdate', callback);
   }
 
   onValidMoves(callback: (moves: string[]) => void) {
-    this.socket.on('validMoves', callback);
+    this.socket.on('validMoves', (moves: string[]) => {
+      console.log('Received valid moves:', moves);
+      callback(moves);
+    });
     return () => this.socket.off('validMoves', callback);
   }
 
+  private setupEventHandlers() {
+    let retryCount = 0;
+    const maxRetries = 3;
+    const maxBackoffDelay = 30000; // 30 seconds max delay
+
+    this.socket.on('connect', () => {
+      console.log('Socket connected with transport:', this.socket.io.engine.transport.name);
+      this.emit('connectionStatus', 'connected');
+      retryCount = 0;
+      
+      if (this.socket.io.engine.transport.name === 'polling') {
+        this.socket.io.engine.on('upgrade', () => {
+          console.log('Transport upgraded to:', this.socket.io.engine.transport.name);
+        });
+      }
+    });
+
+    this.socket.on('connect_error', (error: Error) => {
+      console.error('Connection error:', error);
+      this.emit('connectionStatus', 'disconnected');
+      this.emit('error', { message: `Connection error: ${error.message}` });
+      retryCount++;
+      
+      if (retryCount <= maxRetries) {
+        console.log(`Retrying connection (${retryCount}/${maxRetries})`);
+        const backoffDelay = Math.min(1000 * Math.pow(2, retryCount - 1), maxBackoffDelay);
+        
+        // Try polling if WebSocket fails
+        if (this.socket.io?.opts?.transports?.includes('websocket')) {
+          console.log('Falling back to polling transport');
+          this.socket.io.opts.transports = ['polling'];
+        }
+        
+        setTimeout(() => {
+          console.log(`Attempting reconnection after ${backoffDelay}ms delay`);
+          this.connect();
+        }, backoffDelay);
+      } else {
+        console.error('Max reconnection attempts reached');
+        this.emit('error', { message: 'Connection failed after multiple attempts. Please refresh the page or try again later.' });
+        this.socket.disconnect();
+      }
+    });
+
+    this.socket.on('error', (error: Error) => {
+      console.error('Socket error:', error);
+      this.emit('error', { message: `Socket error: ${error.message}` });
+    });
+
+    this.socket.on('disconnect', (reason: string) => {
+      console.log('Disconnected:', reason);
+      this.emit('connectionStatus', 'disconnected');
+      
+      if (reason === 'io server disconnect' || reason === 'transport close') {
+        console.log('Attempting to reconnect...');
+        this.connect();
+      }
+    });
+
+    this.socket.on('game_error', (error: { message: string }) => {
+      console.error('Game error:', error);
+      this.emit('error', { message: `Game error: ${error.message}` });
+    });
+
+    this.socket.on('reconnect', (attemptNumber: number) => {
+      console.log('Reconnected after', attemptNumber, 'attempts');
+      retryCount = 0;
+    });
+  }
+
   emit(event: keyof SocketEvents, data?: any) {
-    this.socket.emit(event, data);
+    console.log(`Emitting ${event}:`, data);
+    
+    if (!this.socket?.connected) {
+      console.error('Socket not connected. Attempting reconnection...');
+      this.connect();
+      return;
+    }
+
+    this.socket.emit(event, data, (response: any) => {
+      console.log(`Response from ${event}:`, response);
+      if (response?.error) {
+        console.error(`Error in ${event}:`, response.error);
+        this.emit('error', { message: `Game error: ${response.error}` });
+      }
+    });
   }
 }
 
