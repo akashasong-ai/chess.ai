@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  base: '/',
   define: {
     'import.meta.env.VITE_SOCKET_URL': JSON.stringify('https://chess-ai-backend.onrender.com'),
     'import.meta.env.VITE_API_URL': JSON.stringify('https://chess-ai-backend.onrender.com')
@@ -22,8 +23,11 @@ export default defineConfig({
     assetsDir: 'assets',
     rollupOptions: {
       output: {
-        manualChunks: undefined
+        manualChunks: undefined,
+        assetFileNames: 'assets/[name].[hash].[ext]',
+        chunkFileNames: 'assets/[name].[hash].js',
+        entryFileNames: 'assets/[name].[hash].js'
       }
     }
   }
-})                                                                                                                                                                                                                                                                                                          
+})                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
