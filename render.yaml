@@ -32,8 +32,15 @@ services:
 
   - type: static
     name: chess-ai-frontend
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
+    buildFilter:
+      paths:
+        - src/**
+        - package.json
+        - package-lock.json
+        - tsconfig.json
+        - vite.config.ts
     envVars:
       - key: VITE_API_URL
         value: https://chess-ai-backend.onrender.com
